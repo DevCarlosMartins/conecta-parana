@@ -11,6 +11,8 @@ describe('Auth (e2e)', () => {
   let refreshToken: string;
   let prisma: PrismaService;
 
+  const testEmails = ['e2e@teste.com', 'case@test.com'];
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -21,25 +23,26 @@ describe('Auth (e2e)', () => {
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
+        transform: true,
       }),
     );
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
     await prisma.client.refreshToken.deleteMany({
-      where: { user: { email: 'e2e@teste.com' } },
+      where: { user: { email: { in: testEmails } } },
     });
     await prisma.client.user.deleteMany({
-      where: { email: 'e2e@teste.com' },
+      where: { email: { in: testEmails } },
     });
   });
 
   afterAll(async () => {
     await prisma.client.refreshToken.deleteMany({
-      where: { user: { email: 'e2e@teste.com' } },
+      where: { user: { email: { in: testEmails } } },
     });
     await prisma.client.user.deleteMany({
-      where: { email: 'e2e@teste.com' },
+      where: { email: { in: testEmails } },
     });
     await app.close();
   });
@@ -121,6 +124,26 @@ describe('Auth (e2e)', () => {
       .send({
         name: 'Teste E2E',
         email: 'e2e@teste.com',
+        password: 'senha123',
+      })
+      .expect(409);
+  });
+
+  it('POST /auth/register — deve retornar 409 com email duplicado ignorando maiúsculas e minúsculas', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        name: 'Teste Case',
+        email: 'case@test.com',
+        password: 'senha123',
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        name: 'Teste Case Duplicado',
+        email: 'CASE@TEST.com',
         password: 'senha123',
       })
       .expect(409);

@@ -1,17 +1,24 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @ApiProperty({ example: 'Johnny CuteBottom' })
   @IsString()
+  @IsNotEmpty({ message: 'Nome é obrigatório!' })
   name!: string;
 
   @ApiProperty({ example: 'johnny.cutebottom@example.com' })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   @IsEmail()
+  @IsNotEmpty({ message: 'Email é obrigatório!' })
   email!: string;
 
   @ApiProperty({ example: 'password123', minLength: 6 })
   @IsString()
+  @IsNotEmpty({ message: 'Senha é obrigatória!' })
   @MinLength(6)
   password!: string;
 }
