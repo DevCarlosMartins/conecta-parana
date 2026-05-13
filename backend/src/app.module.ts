@@ -10,6 +10,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PinoLoggerModule } from './config/logger.module';
+import { NewsModule } from './modules/news/news.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PinoLoggerModule } from './config/logger.module';
     AuthModule,
     AdminModule,
     RedisCacheModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -10,6 +10,7 @@ describe('Auth (e2e)', () => {
   let accessToken: string;
   let refreshToken: string;
   let prisma: PrismaService;
+  let testCityId: number;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,6 +33,10 @@ describe('Auth (e2e)', () => {
     await prisma.client.user.deleteMany({
       where: { email: 'e2e@teste.com' },
     });
+    const city = await prisma.client.city.create({
+      data: { name: 'E2E Test City', state: 'PR' },
+    });
+    testCityId = city.id;
   });
 
   afterAll(async () => {
@@ -40,6 +45,9 @@ describe('Auth (e2e)', () => {
     });
     await prisma.client.user.deleteMany({
       where: { email: 'e2e@teste.com' },
+    });
+    await prisma.client.city.deleteMany({
+      where: { id: testCityId },
     });
     await app.close();
   });
@@ -51,6 +59,7 @@ describe('Auth (e2e)', () => {
         name: 'Teste E2E',
         email: 'e2e@teste.com',
         password: 'senha123',
+        cityId: testCityId,
       })
       .expect(201);
 
@@ -122,6 +131,7 @@ describe('Auth (e2e)', () => {
         name: 'Teste E2E',
         email: 'e2e@teste.com',
         password: 'senha123',
+        cityId: testCityId,
       })
       .expect(409);
   });
