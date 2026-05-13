@@ -9,10 +9,10 @@ export class RegisterDto {
   name!: string;
 
   @ApiProperty({ example: 'johnny.cutebottom@example.com' })
+  @IsEmail({}, { message: 'Email inválido' })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.toLowerCase().trim() : value,
   )
-  @IsEmail()
   @IsNotEmpty({ message: 'Email é obrigatório!' })
   email!: string;
 

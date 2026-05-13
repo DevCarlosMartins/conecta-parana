@@ -59,3 +59,4 @@ Exemplo:
 @IsEmail({}, { message: 'Email inválido' })
 email!: string;
 ```
+\n

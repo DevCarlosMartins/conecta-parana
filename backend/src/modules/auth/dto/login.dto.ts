@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({ example: 'johnny.cutebottom@example.com' })
-  @IsEmail()
+  @IsEmail({}, { message: 'Email inválido' })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.toLowerCase().trim() : value,
   )
@@ -13,6 +13,6 @@ export class LoginDto {
 
   @ApiProperty({ example: 'password123' })
   @IsString()
-  @IsNotEmpty({ message: 'Email é obrigatório' })
+  @IsNotEmpty({ message: 'Senha é obrigatória' })
   password!: string;
 }
