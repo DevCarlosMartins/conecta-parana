@@ -26,6 +26,13 @@ async function bootstrap(): Promise<void> {
 
   app.useLogger(app.get(Logger));
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
+
   app.use(helmet());
 
   app.useGlobalPipes(

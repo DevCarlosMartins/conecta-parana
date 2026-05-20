@@ -36,10 +36,17 @@ export class AuthService {
         name: dto.name,
         email,
         password: hashed,
+        cityId: dto.cityId,
       },
     });
 
-    return { id: user.id, name: user.name, email: user.email, role: user.role };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      cityId: user.cityId,
+    };
   }
 
   async login(dto: LoginDto) {
@@ -59,7 +66,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    return this.generateTokens(user.id, user.email, user.role);
+    return this.generateTokens(user.id, user.email, user.role, user.cityId);
   }
 
   async refresh(token: string) {
@@ -77,7 +84,7 @@ export class AuthService {
       where: { id: stored.userId },
     });
 
-    return this.generateTokens(user.id, user.email, user.role);
+    return this.generateTokens(user.id, user.email, user.role, user.cityId);
   }
 
   async getMe(userId: number) {
@@ -85,15 +92,26 @@ export class AuthService {
       where: { id: userId },
     });
 
-    return { id: user.id, name: user.name, email: user.email, role: user.role };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      cityId: user.cityId,
+    };
   }
 
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }
 
-  private async generateTokens(userId: number, email: string, role: string) {
-    const payload = { sub: userId, email, role };
+  private async generateTokens(
+    userId: number,
+    email: string,
+    role: string,
+    cityId: number | null,
+  ) {
+    const payload = { sub: userId, email, role, cityId };
 
     const accessToken = this.jwt.sign(payload);
 

@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -21,4 +27,8 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Senha é obrigatória!' })
   @MinLength(6)
   password!: string;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  cityId!: number;
 }

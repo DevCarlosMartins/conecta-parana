@@ -54,12 +54,14 @@ describe('AuthService', () => {
         name: 'João',
         email: 'joao@email.com',
         role: 'USUARIO',
+        cityId: 1,
       });
 
       const result = await service.register({
         name: 'João',
         email: 'joao@email.com',
         password: 'senha123',
+        cityId: 1,
       });
 
       expect(result).toEqual({
@@ -67,6 +69,7 @@ describe('AuthService', () => {
         name: 'João',
         email: 'joao@email.com',
         role: 'USUARIO',
+        cityId: 1,
       });
       expect(mockPrisma.client.user.create).toHaveBeenCalledTimes(1);
     });
@@ -75,6 +78,7 @@ describe('AuthService', () => {
       mockPrisma.client.user.findUnique.mockResolvedValue({
         id: 1,
         email: 'joao@email.com',
+        cityId: 1,
       });
 
       await expect(
@@ -82,6 +86,7 @@ describe('AuthService', () => {
           name: 'João',
           email: 'joao@email.com',
           password: 'senha123',
+          cityId: 1,
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -95,6 +100,7 @@ describe('AuthService', () => {
         email: 'joao@email.com',
         password: hashed,
         role: 'USUARIO',
+        cityId: 1,
       });
       mockPrisma.client.refreshToken.create.mockResolvedValue({});
 
@@ -122,75 +128,126 @@ describe('AuthService', () => {
         email: 'joao@email.com',
         password: hashed,
         role: 'USUARIO',
+        cityId: 1,
       });
 
       await expect(
         service.login({ email: 'joao@email.com', password: 'senha123' }),
       ).rejects.toThrow(UnauthorizedException);
     });
-  });
 
-  describe('refresh', () => {
-    it('deve retornar novos tokens com refresh token válido', async () => {
-      mockPrisma.client.refreshToken.findUnique.mockResolvedValue({
-        token: 'valid_token',
-        expiresAt: new Date(Date.now() + 100000),
-        userId: 1,
-      });
-      mockPrisma.client.refreshToken.delete.mockResolvedValue({});
-      mockPrisma.client.user.findUniqueOrThrow.mockResolvedValue({
+    it('deve incluir cityId no payload do JWT ao logar', async () => {
+      const hashed = await hash('senha123', 10);
+      mockPrisma.client.user.findUnique.mockResolvedValue({
         id: 1,
-        email: 'joao@email.com',
-        role: 'USUARIO',
+        email: 'admin@conecta.local',
+        password: hashed,
+        role: 'ADMIN',
+        cityId: 7,
       });
       mockPrisma.client.refreshToken.create.mockResolvedValue({});
 
-      const result = await service.refresh('valid_token');
+      await service.login({
+        email: 'admin@conecta.local',
+        password: 'senha123',
+      });
+
+      expect(mockJwt.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: 1,
+          email: 'admin@conecta.local',
+          role: 'ADMIN',
+        }),
+      );
+    });
+
+    it('deve aceitar usuário sem cidade (cityId null)', async () => {
+      const hashed = await hash('senha123', 10);
+      mockPrisma.client.user.findUnique.mockResolvedValue({
+        id: 2,
+        email: 'cidadao@email.com',
+        password: hashed,
+        role: 'USUARIO',
+        cityId: null,
+      });
+      mockPrisma.client.refreshToken.create.mockResolvedValue({});
+
+      const result = await service.login({
+        email: 'cidadao@email.com',
+        password: 'senha123',
+      });
 
       expect(result).toHaveProperty('access_token');
-      expect(result).toHaveProperty('refresh_token');
-      expect(mockPrisma.client.refreshToken.delete).toHaveBeenCalledTimes(1);
-    });
-
-    it('deve lançar UnauthorizedException se token não existir', async () => {
-      mockPrisma.client.refreshToken.findUnique.mockResolvedValue(null);
-
-      await expect(service.refresh('invalid_token')).rejects.toThrow(
-        UnauthorizedException,
+      expect(mockJwt.sign).toHaveBeenCalledWith(
+        expect.objectContaining({ cityId: null }),
       );
     });
 
-    it('deve lançar UnauthorizedException se token estiver expirado', async () => {
-      mockPrisma.client.refreshToken.findUnique.mockResolvedValue({
-        token: 'expired_token',
-        expiresAt: new Date(Date.now() - 100000),
-        userId: 1,
+    describe('refresh', () => {
+      it('deve retornar novos tokens com refresh token válido', async () => {
+        mockPrisma.client.refreshToken.findUnique.mockResolvedValue({
+          token: 'valid_token',
+          expiresAt: new Date(Date.now() + 100000),
+          userId: 1,
+        });
+        mockPrisma.client.refreshToken.delete.mockResolvedValue({});
+        mockPrisma.client.user.findUniqueOrThrow.mockResolvedValue({
+          id: 1,
+          email: 'joao@email.com',
+          role: 'USUARIO',
+          cityId: 1,
+        });
+        mockPrisma.client.refreshToken.create.mockResolvedValue({});
+
+        const result = await service.refresh('valid_token');
+
+        expect(result).toHaveProperty('access_token');
+        expect(result).toHaveProperty('refresh_token');
+        expect(mockPrisma.client.refreshToken.delete).toHaveBeenCalledTimes(1);
       });
 
-      await expect(service.refresh('expired_token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      it('deve lançar UnauthorizedException se token não existir', async () => {
+        mockPrisma.client.refreshToken.findUnique.mockResolvedValue(null);
+
+        await expect(service.refresh('invalid_token')).rejects.toThrow(
+          UnauthorizedException,
+        );
+      });
+
+      it('deve lançar UnauthorizedException se token estiver expirado', async () => {
+        mockPrisma.client.refreshToken.findUnique.mockResolvedValue({
+          token: 'expired_token',
+          expiresAt: new Date(Date.now() - 100000),
+          userId: 1,
+        });
+
+        await expect(service.refresh('expired_token')).rejects.toThrow(
+          UnauthorizedException,
+        );
+      });
     });
-  });
 
-  describe('getMe', () => {
-    it('deve retornar dados do usuário sem a senha', async () => {
-      mockPrisma.client.user.findUniqueOrThrow.mockResolvedValue({
-        id: 1,
-        name: 'João',
-        email: 'joao@email.com',
-        role: 'USUARIO',
+    describe('getMe', () => {
+      it('deve retornar dados do usuário sem a senha', async () => {
+        mockPrisma.client.user.findUniqueOrThrow.mockResolvedValue({
+          id: 1,
+          name: 'João',
+          email: 'joao@email.com',
+          role: 'USUARIO',
+          cityId: 1,
+        });
+
+        const result = await service.getMe(1);
+
+        expect(result).toEqual({
+          id: 1,
+          name: 'João',
+          email: 'joao@email.com',
+          role: 'USUARIO',
+          cityId: 1,
+        });
+        expect(result).not.toHaveProperty('password');
       });
-
-      const result = await service.getMe(1);
-
-      expect(result).toEqual({
-        id: 1,
-        name: 'João',
-        email: 'joao@email.com',
-        role: 'USUARIO',
-      });
-      expect(result).not.toHaveProperty('password');
     });
   });
 });

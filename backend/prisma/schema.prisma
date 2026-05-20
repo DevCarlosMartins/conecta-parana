@@ -28,6 +28,7 @@ model City {
   news   News[]
   locals Local[] 
 
+  @@unique([name, state])
   @@map("cities")
 }
 
@@ -114,12 +115,12 @@ model Like {
 
   userId Int @map("user_id")
   eventId Int? @map("event_id")
-  postId Int? @map("post_id")
+  comunicadoId Int? @map("comunicado_id")
   newsId Int? @map("news_id")
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  post Post? @relation(fields: [postId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  comunicado Comunicado? @relation(fields: [comunicadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   news News? @relation(fields: [newsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@map("likes")
@@ -131,12 +132,12 @@ model Favorite {
 
   userId Int @map("user_id")
   eventId Int? @map("event_id")
-  postId Int? @map("post_id")
+  comunicadoId Int? @map("comunicado_id")
   newsId Int? @map("news_id")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  post Post? @relation(fields: [postId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  comunicado Comunicado? @relation(fields: [comunicadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   news News? @relation(fields: [newsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   
   @@map("favorites")
@@ -150,11 +151,11 @@ model Notification {
 
   userId Int @map("user_id")
   eventId Int? @map("event_id")
-  postId Int? @map("post_id")
+  comunicadoId Int? @map("comunicado_id")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  post Post? @relation(fields: [postId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  comunicado Comunicado? @relation(fields: [comunicadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@map("notifications")
 }
@@ -175,7 +176,7 @@ model News {
   @@map("news")
 }
 
-model Post {
+model Comunicado {
   id          Int     @id @default(autoincrement())
   title       String
   description String
@@ -185,7 +186,7 @@ model Post {
   notifications Notification[]
   likes         Like[]
 
-  @@map("posts")
+  @@map("comunicados")
 }
 
 model Category {
