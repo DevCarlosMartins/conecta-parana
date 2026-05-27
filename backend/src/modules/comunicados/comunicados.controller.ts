@@ -16,25 +16,25 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ComunicadoService } from './comunicados.service';
-import { ListComunicadoQueryDto } from './dto/list-comunicado-query.dto';
+import { ComunicadosService } from './comunicados.service';
+import { ListComunicadosQueryDto } from './dto/list-comunicados-query.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CreateComunicadoDto } from './dto/create-comunicado.dto';
+import { CreateComunicadosDto } from './dto/create-comunicados.dto';
 import { Role } from '@prisma/client';
-import { UpdateComunicadoDto } from './dto/update-comunicado.dto';
+import { UpdateComunicadosDto } from './dto/update-comunicados.dto';
 
-@ApiTags('comunicado')
-@Controller('comunicado')
-export class ComunicadoController {
-  constructor(private readonly comunicadoService: ComunicadoService) {}
+@ApiTags('comunicados')
+@Controller('comunicados')
+export class ComunicadosController {
+  constructor(private readonly comunicadosService: ComunicadosService) {}
 
   @Get()
   @ApiOperation({ summary: 'Lista comunicados (publico filtros opcionais)' })
   @ApiResponse({ status: 200, description: 'lista retornada com sucesso' })
-  async findAll(@Query() dto: ListComunicadoQueryDto) {
-    return this.comunicadoService.findAll(dto);
+  async findAll(@Query() dto: ListComunicadosQueryDto) {
+    return this.comunicadosService.findAll(dto);
   }
 
   @Get(':id')
@@ -42,7 +42,7 @@ export class ComunicadoController {
   @ApiResponse({ status: 200, description: 'Lsita retornada com sucesso' })
   @ApiResponse({ status: 404, description: 'comunicado nao encontrado' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.comunicadoService.findOne(id);
+    return this.comunicadosService.findOne(id);
   }
 
   @Post()
@@ -53,8 +53,8 @@ export class ComunicadoController {
   @ApiResponse({ status: 201, description: 'comunicado criado' })
   @ApiResponse({ status: 400, description: 'body invalido' })
   @ApiResponse({ status: 401, description: 'sem token' })
-  async create(@Body() dto: CreateComunicadoDto) {
-    return this.comunicadoService.create(dto);
+  async create(@Body() dto: CreateComunicadosDto) {
+    return this.comunicadosService.create(dto);
   }
 
   @Put(':id')
@@ -67,9 +67,9 @@ export class ComunicadoController {
   @ApiResponse({ status: 404, description: 'Comunicado não encontrada' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateComunicadoDto,
+    @Body() dto: UpdateComunicadosDto,
   ) {
-    return this.comunicadoService.update(id, dto);
+    return this.comunicadosService.update(id, dto);
   }
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -80,6 +80,6 @@ export class ComunicadoController {
   @ApiResponse({ status: 401, description: 'sem token' })
   @ApiResponse({ status: 404, description: 'Comunicado Nao Encontrado' })
   async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.comunicadoService.remove(id);
+    return this.comunicadosService.remove(id);
   }
 }

@@ -11,6 +11,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PinoLoggerModule } from './config/logger.module';
 import { NewsModule } from './modules/news/news.module';
+import { CitiesModule } from './modules/cities/cities.module';
+import { ComunicadosModule } from './modules/comunicados/comunicados.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { NewsModule } from './modules/news/news.module';
     AdminModule,
     RedisCacheModule,
     NewsModule,
+    CitiesModule,
+    ComunicadosModule,
   ],
   controllers: [AppController],
   providers: [

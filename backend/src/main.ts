@@ -35,6 +35,13 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet());
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
+
   const configService = app.get(ConfigService);
   const allowedOrigins =
     configService

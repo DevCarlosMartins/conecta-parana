@@ -1,15 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ListComunicadoQueryDto } from './dto/list-comunicado-query.dto';
+import { ListComunicadosQueryDto } from './dto/list-comunicados-query.dto';
 import { Prisma } from '@prisma/client';
-import { CreateComunicadoDto } from './dto/create-comunicado.dto';
-import { UpdateComunicadoDto } from './dto/update-comunicado.dto';
+import { CreateComunicadosDto } from './dto/create-comunicados.dto';
+import { UpdateComunicadosDto } from './dto/update-comunicados.dto';
 
 @Injectable()
-export class ComunicadoService {
+export class ComunicadosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(dto: ListComunicadoQueryDto) {
+  async findAll(dto: ListComunicadosQueryDto) {
     const where: Prisma.ComunicadoWhereInput = {};
     if (dto.isActive !== undefined) where.isActive = dto.isActive;
 
@@ -29,7 +29,7 @@ export class ComunicadoService {
     }
   }
 
-  async create(dto: CreateComunicadoDto) {
+  async create(dto: CreateComunicadosDto) {
     return this.prisma.client.comunicado.create({
       data: {
         title: dto.title,
@@ -39,7 +39,7 @@ export class ComunicadoService {
     });
   }
 
-  async update(id: number, dto: UpdateComunicadoDto) {
+  async update(id: number, dto: UpdateComunicadosDto) {
     await this.findOne(id);
 
     return this.prisma.client.comunicado.update({

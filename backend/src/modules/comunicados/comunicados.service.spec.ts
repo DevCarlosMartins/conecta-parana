@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
-import { ComunicadoService } from './comunicados.service';
+import { ComunicadosService } from './comunicados.service';
 import { NotFoundException } from '@nestjs/common';
 
 const mockPrisma = {
@@ -16,16 +16,16 @@ const mockPrisma = {
 };
 
 describe('ComunicadoService', () => {
-  let service: ComunicadoService;
+  let service: ComunicadosService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ComunicadoService,
+        ComunicadosService,
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
-    service = module.get<ComunicadoService>(ComunicadoService);
+    service = module.get<ComunicadosService>(ComunicadosService);
     jest.clearAllMocks();
   });
   //-----------------------// find All // --------------------------------------
