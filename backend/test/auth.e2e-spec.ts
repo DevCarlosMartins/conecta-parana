@@ -29,15 +29,26 @@ describe('Auth (e2e)', () => {
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
+
     await prisma.client.refreshToken.deleteMany({
       where: { user: { email: { in: testEmails } } },
     });
+
     await prisma.client.user.deleteMany({
       where: { email: { in: testEmails } },
     });
+
+    await prisma.client.city.deleteMany({
+      where: {
+        name: 'E2E Test City',
+        state: 'PR',
+      },
+    });
+
     const city = await prisma.client.city.create({
       data: { name: 'E2E Test City', state: 'PR' },
     });
+
     testCityId = city.id;
   });
 
@@ -145,6 +156,7 @@ describe('Auth (e2e)', () => {
         name: 'Teste Case',
         email: 'case@test.com',
         password: 'senha123',
+        cityId: testCityId,
       })
       .expect(201);
 
@@ -154,6 +166,7 @@ describe('Auth (e2e)', () => {
         name: 'Teste Case Duplicado',
         email: 'CASE@TEST.com',
         password: 'senha123',
+        cityId: testCityId,
       })
       .expect(409);
   });
