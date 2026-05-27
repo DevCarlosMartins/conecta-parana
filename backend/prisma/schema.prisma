@@ -28,6 +28,7 @@ model City {
   news   News[]
   locals Local[] 
 
+  @@unique([name, state])
   @@map("cities")
 }
 

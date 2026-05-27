@@ -13,6 +13,7 @@ import { PinoLoggerModule } from './config/logger.module';
 import { NewsModule } from './modules/news/news.module';
 import { LocalsModule } from './modules/locals/locals.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { CitiesModule } from './modules/cities/cities.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     NewsModule,
     LocalsModule,
     CategoriesModule,
+    CitiesModule,
   ],
   controllers: [AppController],
   providers: [
