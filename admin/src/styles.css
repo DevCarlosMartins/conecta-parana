@@ -1,18 +1,44 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --color-sidebar: #87ceeb;
-  --color-sidebar-text: #1e293b;
-  --color-sidebar-hover: #6bb8d9;
-  --color-sidebar-active: #2563eb;
-  --color-content-bg: #4a8daa;
-  --color-shell-bg: #5a6577;
-  --color-form-bg: #c8c8c8;
-  --color-input-bg: #e0e0e0;
-  --color-btn-cancel: #c22f2f;
-  --color-btn-cancel-hover: #9c1c1c;
-  --color-btn-create: #16a34a;
-  --color-btn-create-hover: #15803d;
+
+/* Principal */
+  --color-primary: #0F6E56;
+  --color-primary-dark: #085041;
+  --color-primary-light: #E1F5EE;
+  --color-primary-text:  #9FE1CB;
+
+  /* Nav Bar */
+
+  --color-sidebar:       #0F6E56;
+  --color-sidebar-dark:  #085041;
+  --color-sidebar-text:  rgba(255,255,255,0.70);
+  --color-sidebar-hover: rgba(255,255,255,0.08);
+  --color-sidebar-active:rgba(255,255,255,0.14);
+
+  /* ── Fundo ── */
+  --color-shell-bg:      #F8F9FA;
+  --color-content-bg:    #FFFFFF;
+  --color-form-bg:       #FFFFFF;
+  --color-input-bg:      #F3F4F6;
+
+  /* ── Textos ── */
+  --color-text-strong:   #111827;
+  --color-text-default:  #374151;
+  --color-text-muted:    #6B7280;
+
+  /* ── Bordas ── */
+  --color-border:        #E5E7EB;
+  --color-border-strong: #D1D5DB;
+
+  /* ── Status ── */
+  --color-success:       #16A34A;
+  --color-warning:       #D97706;
+  --color-danger:        #DC2626;
+
+  /* ── Botão ── */
+  --color-btn-cancel:       #DC2626;
+  --color-btn-cancel-hover: #B91C1C;
+  --color-btn-create:       #0F6E56;
+  --color-btn-create-hover: #085041;
 }
