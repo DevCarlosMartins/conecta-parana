@@ -8,7 +8,11 @@ export class ListComunicadosQueryDto {
     description: 'mostrar apenas comunicados ativos',
   })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
   @IsBoolean({ message: 'isActive deve ser um booleano' })
   isActive?: boolean;
 }

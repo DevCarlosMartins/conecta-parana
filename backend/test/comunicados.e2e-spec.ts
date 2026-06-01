@@ -24,7 +24,11 @@ describe('Comunicados (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
     );
     await app.init();
 
@@ -76,7 +80,7 @@ describe('Comunicados (e2e)', () => {
       where: { email: { in: [ADMIN1_EMAIL, USUARIO_EMAIL] } },
     });
   }
-  // --------------------- // POST /comunicado // ---------------------
+
   it('Post /comunicados - admin cria comunicados da cidade', async () => {
     const res = await request(app.getHttpServer())
       .post('/comunicados')
@@ -113,7 +117,6 @@ describe('Comunicados (e2e)', () => {
       .expect(400);
   });
 
-  // --------------------- // GET /comunicados // ---------------------
   it('GET /comunicados - lista publica sem token', async () => {
     const res = await request(app.getHttpServer())
       .get('/comunicados')
@@ -131,7 +134,7 @@ describe('Comunicados (e2e)', () => {
   it('GET /comunicados/:id - retorna detalhe', async () => {
     const created = await prisma.client.comunicado.create({
       data: {
-        title: 'Detail',
+        title: 'Detail e2e',
         description: 'Test detail',
         isActive: true,
       },
@@ -140,17 +143,16 @@ describe('Comunicados (e2e)', () => {
       .get(`/comunicados/${created.id}`)
       .expect(200);
 
-    expect(res.body).toMatchObject({ id: created.id, title: 'Detail' });
+    expect(res.body).toMatchObject({ id: created.id, title: 'Detail e2e' });
   });
   it('GET /comunicados/:id - id inexistente retorna 404', async () => {
     await request(app.getHttpServer()).get('/comunicados/999999').expect(404);
   });
 
-  // --------------------- // PUT /news/:id // ---------------------
   it('PUT /comunicados/:id - admin ', async () => {
     const comunicados = await prisma.client.comunicado.create({
       data: {
-        title: 'Old',
+        title: 'Old e2e',
         description: 'Old desc',
         isActive: true,
       },
@@ -171,12 +173,10 @@ describe('Comunicados (e2e)', () => {
       .expect(404);
   });
 
-  // --------------------- // DELETE /news/:id // ---------------------
-
   it('DELETE /comunicados/:id - admin deleta o comunicado', async () => {
     const comunicados = await prisma.client.comunicado.create({
       data: {
-        title: 'toDelete',
+        title: 'toDelete e2e',
         description: 'Delete this one',
         isActive: true,
       },
@@ -189,6 +189,9 @@ describe('Comunicados (e2e)', () => {
   });
 
   it('DELETE /comunicados/:id - id não encontrado', async () => {
-    await request(app.getHttpServer()).delete('/comunicado/999999').expect(404);
+    await request(app.getHttpServer())
+      .delete('/comunicados/999999')
+      .set('Authorization', `Bearer ${tokenAdmin1}`)
+      .expect(404);
   });
 });
