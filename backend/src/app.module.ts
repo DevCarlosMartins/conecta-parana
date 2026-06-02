@@ -14,6 +14,7 @@ import { NewsModule } from './modules/news/news.module';
 import { LocalsModule } from './modules/locals/locals.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CitiesModule } from './modules/cities/cities.module';
+import { ComunicadosModule } from './modules/comunicados/comunicados.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { CitiesModule } from './modules/cities/cities.module';
     LocalsModule,
     CategoriesModule,
     CitiesModule,
+    ComunicadosModule,
   ],
   controllers: [AppController],
   providers: [
