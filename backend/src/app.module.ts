@@ -11,8 +11,11 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PinoLoggerModule } from './config/logger.module';
 import { NewsModule } from './modules/news/news.module';
+import { LocalsModule } from './modules/locals/locals.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { CitiesModule } from './modules/cities/cities.module';
 import { EventsModule } from './modules/events/events.module';
+import { ComunicadosModule } from './modules/comunicados/comunicados.module';
 
 @Module({
   imports: [
@@ -38,8 +41,11 @@ import { EventsModule } from './modules/events/events.module';
     AdminModule,
     RedisCacheModule,
     NewsModule,
+    LocalsModule,
+    CategoriesModule,
     CitiesModule,
     EventsModule,
+    ComunicadosModule,
   ],
   controllers: [AppController],
   providers: [

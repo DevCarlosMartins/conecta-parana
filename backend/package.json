@@ -26,7 +26,9 @@
     "prisma:migrate:deploy": "npx prisma migrate deploy",
     "prisma:studio": "npx prisma studio",
     "dev:seed:admin": "ts-node -r tsconfig-paths/register src/seeders/seed-admin.ts",
-    "seed:admin": "node dist/seeders/seed-admin.js"
+    "seed:admin": "node dist/seeders/seed-admin.js",
+    "dev:seed:categories": "ts-node -r tsconfig-paths/register src/seeders/seed-categories.ts",
+    "seed:categories": "node dist/seeders/seed-categories.js"
   },
   "dependencies": {
     "@keyv/redis": "^5.1.6",
