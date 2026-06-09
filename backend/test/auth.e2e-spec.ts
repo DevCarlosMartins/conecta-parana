@@ -145,6 +145,7 @@ describe('Auth (e2e)', () => {
         name: 'Teste Case',
         email: 'case@test.com',
         password: 'senha123',
+        cityId: testCityId,
       })
       .expect(201);
 
@@ -154,6 +155,7 @@ describe('Auth (e2e)', () => {
         name: 'Teste Case Duplicado',
         email: 'CASE@TEST.com',
         password: 'senha123',
+        cityId: testCityId,
       })
       .expect(409);
   });

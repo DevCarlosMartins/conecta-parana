@@ -12,6 +12,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { PinoLoggerModule } from './config/logger.module';
 import { NewsModule } from './modules/news/news.module';
 import { CitiesModule } from './modules/cities/cities.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { CitiesModule } from './modules/cities/cities.module';
     RedisCacheModule,
     NewsModule,
     CitiesModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
