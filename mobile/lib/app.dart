@@ -1,8 +1,8 @@
 import 'package:conectaparana/core/theme/app_theme.dart';
 import 'package:conectaparana/features/auth/screens/login_screen.dart';
 import 'package:conectaparana/features/auth/screens/register_screen.dart';
-import 'package:conectaparana/shared/widgets/placeholder_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:conectaparana/shared/widgets/main_shell.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -19,7 +19,7 @@ class App extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const PlaceholderScreen(),
+        '/home': (context) => const MainShell(),
       },
     );
   }
