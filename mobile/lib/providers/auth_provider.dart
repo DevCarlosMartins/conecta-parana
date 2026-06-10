@@ -6,11 +6,16 @@ class AuthProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _isAuthenticated = false;
+  bool _isGuest = false;
+
   String? _errorMessage;
   String? _successMessage;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
+  bool get isGuest => _isGuest;
+  bool get canAccessApp => _isAuthenticated || _isGuest;
+
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
 
@@ -61,6 +66,7 @@ class AuthProvider extends ChangeNotifier {
       await _authService.login(email: email, password: password);
 
       _isAuthenticated = true;
+      _isGuest = false;
       return true;
     } on AuthException catch (e) {
       _errorMessage = e.message;
@@ -76,6 +82,26 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     await _authService.logout();
     _isAuthenticated = false;
+    _isGuest = false;
     clearMessages();
+  }
+
+  void enterAsGuest() {
+    _isGuest = true;
+    _isAuthenticated = false;
+    clearMessages();
+    notifyListeners();
+  }
+
+  Future<void> checkAuthentication() async {
+    final hasToken = await _authService.hasToken();
+
+    _isAuthenticated = hasToken;
+
+    if (hasToken) {
+      _isGuest = false;
+    }
+
+    notifyListeners();
   }
 }

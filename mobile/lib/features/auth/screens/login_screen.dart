@@ -367,6 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 TextButton(
                   onPressed: () {
+                    context.read<AuthProvider>().enterAsGuest();
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   child: Text(
