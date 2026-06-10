@@ -22,6 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color _green = Color(0xFF029144);
   static const Color _teal = Color(0xFF146E77);
   static const Color _gray = Color(0xFF595959);
+  static const Color _darkBackground = Color(0xFF121212);
+  static const Color _darkCard = Color(0xFF1E1E1E);
 
   @override
   void dispose() {
@@ -87,12 +89,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLabel(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         text,
         style: GoogleFonts.montserrat(
-          color: _gray,
+          color: isDark ? Colors.white : _gray,
           fontSize: 16,
           fontWeight: FontWeight.w700,
         ),
@@ -106,6 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
     required String? Function(String?) validator,
     bool isPassword = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? _darkCard : Colors.white;
+    final textColor = isDark ? Colors.white : _gray;
+    final hintColor = isDark ? Colors.white54 : Colors.grey;
+    final iconColor = isDark ? Colors.white70 : Colors.black87;
+
     return TextFormField(
       controller: controller,
       validator: validator,
@@ -114,18 +124,18 @@ class _LoginScreenState extends State<LoginScreen> {
           ? TextInputType.text
           : TextInputType.emailAddress,
       style: GoogleFonts.montserrat(
-        color: _gray,
+        color: textColor,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: GoogleFonts.montserrat(
-          color: Colors.grey,
+          color: hintColor,
           fontWeight: FontWeight.w700,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: fillColor,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -136,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _obscurePassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.black87,
+                  color: iconColor,
                 ),
                 onPressed: () {
                   setState(() {
@@ -262,9 +272,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? _darkBackground : Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -345,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Não possui uma conta?',
                   style: GoogleFonts.montserrat(
-                    color: _gray,
+                    color: isDark ? Colors.white : _gray,
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                   ),
