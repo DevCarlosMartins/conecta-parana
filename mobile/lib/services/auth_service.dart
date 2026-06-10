@@ -21,6 +21,7 @@ class AuthService {
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const int _defaultCityId = 1;
 
   Future<void> register({
     required String name,
@@ -39,7 +40,7 @@ class AuthService {
               'name': name,
               'email': email,
               'password': password,
-              'cityId': 1,
+              'cityId': _defaultCityId,
             }),
           )
           .timeout(const Duration(seconds: 15));
@@ -133,6 +134,72 @@ class AuthService {
   Future<void> logout() async {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
+  }
+
+  Future<void> refresh() async {
+    final refreshToken = await _storage.read(key: _refreshTokenKey);
+
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw AuthException('Sessão expirada. Faça login novamente.');
+    }
+
+    final uri = Uri.parse('${Environment.apiBaseUrl}/auth/refresh');
+
+    final response = await http
+        .post(
+          uri,
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode({'refresh_token': refreshToken}),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = _decodeBody(response.body);
+
+      final accessToken = data['access_token'];
+      final refreshToken = data['refresh_token'];
+
+      if (accessToken is! String || refreshToken is! String) {
+        throw AuthException('Resposta de refresh inválida.');
+      }
+
+      await _storage.write(key: _accessTokenKey, value: accessToken);
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+
+      return;
+    }
+
+    throw AuthException('Sessão expirada. Faça login novamente.');
+  }
+
+  Future<Map<String, dynamic>> getCurrentUser() async {
+    final accessToken = await getAccessToken();
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw AuthException('Usuário não autenticado.');
+    }
+
+    final uri = Uri.parse('${Environment.apiBaseUrl}/auth/me');
+
+    final response = await http
+        .get(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $accessToken',
+          },
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      return _decodeBody(response.body);
+    }
+
+    if (response.statusCode == 401) {
+      throw AuthException('Sessão expirada. Faça login novamente.');
+    }
+
+    throw AuthException('Não foi possível buscar os dados do usuário.');
   }
 
   Future<String?> getAccessToken() async {
