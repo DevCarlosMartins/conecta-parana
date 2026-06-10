@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:conectaparana/features/home/screens/home_screen.dart';
+import 'package:conectaparana/features/events/screens/events_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -198,8 +199,7 @@ class _MainShellState extends State<MainShell> {
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
       ),
-      _ShellPlaceholderPage(
-        title: 'Eventos',
+      EventsScreen(
         cityName: _selectedCity,
         cityAvailable: cityAvailable,
         onCityTap: _openCitySelector,
