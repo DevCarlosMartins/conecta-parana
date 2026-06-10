@@ -27,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const Color _green = Color(0xFF029144);
   static const Color _teal = Color(0xFF146E77);
   static const Color _gray = Color(0xFF595959);
+  static const Color _darkBackground = Color(0xFF121212);
+  static const Color _darkCard = Color(0xFF1E1E1E);
 
   @override
   void dispose() {
@@ -137,12 +139,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildLabel(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         text,
         style: GoogleFonts.montserrat(
-          color: _gray,
+          color: isDark ? Colors.white : _gray,
           fontSize: 14,
           fontWeight: FontWeight.w700,
         ),
@@ -160,6 +164,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     VoidCallback? onToggleVisibility,
     ValueChanged<String>? onChanged,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? _darkCard : Colors.white;
+    final textColor = isDark ? Colors.white : _gray;
+    final hintColor = isDark ? Colors.white54 : Colors.grey;
+    final iconColor = isDark ? Colors.white70 : Colors.black87;
+
     return TextFormField(
       key: fieldKey,
       controller: controller,
@@ -171,18 +181,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: GoogleFonts.montserrat(
-        color: _gray,
+        color: textColor,
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: GoogleFonts.montserrat(
-          color: Colors.grey,
+          color: hintColor,
           fontWeight: FontWeight.w700,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: fillColor,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 12,
@@ -193,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.black87,
+                  color: iconColor,
                 ),
                 onPressed: onToggleVisibility,
               )
@@ -287,9 +297,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? _darkBackground : Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 36),
@@ -386,7 +397,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Já possui uma conta?',
                   style: GoogleFonts.montserrat(
-                    color: _gray,
+                    color: isDark ? Colors.white : _gray,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
