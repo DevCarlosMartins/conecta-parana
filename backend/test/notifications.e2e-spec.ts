@@ -100,16 +100,16 @@ describe('notificacao (e2e)', () => {
     });
   }
 
-  it('POST / notifications - admin cria notificacao da cidade', async () => {
+  it('POST / notifications - Admin cria Notificação', async () => {
     const res = await request(app.getHttpServer())
       .post('/notifications')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send({
-        title: 'titulo da notificacao',
-        description: 'descricao minima da notificacao',
+        title: 'Titulo da notificação',
+        description: 'Descrição minima da notificação',
       })
       .expect(201);
-    expect(res.body.count).toBeGreaterThanOrEqual(2);
+    expect((res.body as { count: number }).count).toBeGreaterThanOrEqual(2);
   });
 
   it('POST /notification - sem token retorna 401', async () => {
@@ -118,7 +118,7 @@ describe('notificacao (e2e)', () => {
       .send({ title: 'x', description: 'a' })
       .expect(401);
   });
-  it('POST /notification - usuarui comum retorna 403', async () => {
+  it('POST /notification - usuário comum retorna 403', async () => {
     await request(app.getHttpServer())
       .post('/notifications')
       .set('Authorization', `Bearer ${tokenUsuario}`)
@@ -126,7 +126,7 @@ describe('notificacao (e2e)', () => {
       .expect(403);
   });
 
-  it('POST /notification - body invalido retorna 400', async () => {
+  it('POST /notification - body inválido retorna 400', async () => {
     await request(app.getHttpServer())
       .post('/notifications')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -134,7 +134,7 @@ describe('notificacao (e2e)', () => {
       .expect(400);
   });
 
-  it('GET /notifications - retorna lista do usurario autentcado', async () => {
+  it('GET /notifications - retorna lista do usuário autenticado', async () => {
     const res = await request(app.getHttpServer())
       .get('/notifications')
       .set('Authorization', `Bearer ${tokenUsuario}`)
@@ -147,7 +147,7 @@ describe('notificacao (e2e)', () => {
     await request(app.getHttpServer()).get('/notifications').expect(401);
   });
 
-  it('GET /notifications/unread-count - mostra as notificacoes nao lidas', async () => {
+  it('GET /notifications/unread-count - mostra as notificações não lidas', async () => {
     const res = await request(app.getHttpServer())
       .get('/notifications/unread-count')
       .set('Authorization', `Bearer ${tokenUsuario}`)
@@ -165,8 +165,8 @@ describe('notificacao (e2e)', () => {
   it('PATCH /notifications/:id - admin atualiza notifications ', async () => {
     const notificacao = await prisma.client.notification.create({
       data: {
-        title: 'titulo',
-        description: 'descricao minima',
+        title: 'Titulo',
+        description: 'Descrição minima',
         userId: usuarioId,
       },
     });
@@ -186,8 +186,8 @@ describe('notificacao (e2e)', () => {
   it('PATCH /notifications/:id - usuario sem acesso', async () => {
     const notificacao = await prisma.client.notification.create({
       data: {
-        title: 'titulo',
-        description: 'descricao minima',
+        title: 'Titulo',
+        description: 'Descrição minima',
         userId: usuarioId,
       },
     });

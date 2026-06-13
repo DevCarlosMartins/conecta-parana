@@ -70,9 +70,9 @@ export class NotificationsController {
   @Patch(':id/read')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiResponse({ status: 201, description: 'Notificacao atualizada' })
+  @ApiResponse({ status: 201, description: 'Notificação Atualizada' })
   @ApiResponse({ status: 401, description: 'Sem token' })
-  @ApiResponse({ status: 404, description: 'Nao ha notificacoes' })
+  @ApiResponse({ status: 404, description: 'Não ha notificações' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: ExpressRequest,
@@ -84,9 +84,9 @@ export class NotificationsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Notificacao lida' })
+  @ApiResponse({ status: 200, description: 'Notificação lida' })
   @ApiResponse({ status: 401, description: 'Sem token' })
-  @ApiResponse({ status: 404, description: 'Nao ha notificacoes' })
+  @ApiResponse({ status: 404, description: 'Não ha Notificações' })
   async delete(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: ExpressRequest,

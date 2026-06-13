@@ -53,12 +53,12 @@ describe('NorificationsService', () => {
   describe('Create', () => {
     const dto = {
       title: 'titulo',
-      description: 'decricao minima',
+      description: 'Descrição minima',
       eventId: 1,
       comunicadoId: 1,
     };
 
-    it('Cria notificacao para todos os usuarios', async () => {
+    it('Cria notificação para todos os usuários', async () => {
       const users = [{ id: 1 }, { id: 2 }];
       mockPrisma.client.user.findMany.mockResolvedValue(users);
       mockPrisma.client.notification.createMany.mockResolvedValue({ count: 2 });
@@ -73,7 +73,7 @@ describe('NorificationsService', () => {
     });
   });
   describe('getUnreadCount', () => {
-    it('retorna a contagem de notificacao nao lidas', async () => {
+    it('Retorna a contagem de notificação não lida', async () => {
       mockPrisma.client.notification.count.mockResolvedValue(3);
       const result = await service.getUnreadCount(1);
       expect(mockPrisma.client.notification.count).toHaveBeenCalledWith({
@@ -84,7 +84,7 @@ describe('NorificationsService', () => {
   });
 
   describe('markAsRead', () => {
-    it('marca como lidas', async () => {
+    it('Marca como lidas', async () => {
       mockPrisma.client.notification.findUniqueOrThrow.mockResolvedValue({
         id: 1,
         userId: 1,
@@ -101,7 +101,7 @@ describe('NorificationsService', () => {
       expect(result).toEqual({ id: 1, title: 'novo' });
     });
 
-    it('notficacao userId incorreto', async () => {
+    it('Notificação userId incorreto', async () => {
       mockPrisma.client.notification.findUniqueOrThrow.mockResolvedValue({
         id: 1,
         userId: 1,
@@ -112,7 +112,7 @@ describe('NorificationsService', () => {
       expect(mockPrisma.client.notification.update).not.toHaveBeenCalled();
     });
 
-    it('notificacao lancada nao existe', async () => {
+    it('Notificação laçada não existe', async () => {
       mockPrisma.client.notification.findUniqueOrThrow.mockRejectedValue(
         new Error(),
       );
@@ -120,8 +120,8 @@ describe('NorificationsService', () => {
     });
   });
 
-  describe('remove notificacao', () => {
-    it('admin deleta notificacao com sucesso', async () => {
+  describe('Remove notificação', () => {
+    it('Admin deleta notificaçaõ com sucesso', async () => {
       mockPrisma.client.notification.findUniqueOrThrow.mockResolvedValue({
         id: 1,
         userId: 1,
@@ -134,7 +134,7 @@ describe('NorificationsService', () => {
       });
     });
 
-    it('admin nao encontra noticia para deletar', async () => {
+    it('Admin não encontra notificação para deletar', async () => {
       mockPrisma.client.notification.findUniqueOrThrow.mockResolvedValue({
         id: 1,
         userId: 10,
@@ -143,7 +143,7 @@ describe('NorificationsService', () => {
       await expect(service.remove(1, 1)).rejects.toThrow(ForbiddenException);
       expect(mockPrisma.client.notification.delete).not.toHaveBeenCalled();
     });
-    it('notificacao nao encontrada', async () => {
+    it('Notificação não encontrada', async () => {
       mockPrisma.client.notification.findUniqueOrThrow.mockRejectedValue(
         new Error(),
       );
