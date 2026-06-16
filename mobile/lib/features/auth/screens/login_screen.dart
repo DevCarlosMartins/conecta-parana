@@ -1,27 +1,22 @@
-import 'package:conectaparana/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:conectaparana/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _confirmPasswordFieldKey = GlobalKey<FormFieldState<String>>();
 
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  bool _hasTriedSubmit = false;
 
   static const Color _blue = Color(0xFF264CA9);
   static const Color _green = Color(0xFF029144);
@@ -32,25 +27,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  String? _validateName(String? value) {
-    final name = value?.trim() ?? '';
-
-    if (name.isEmpty) {
-      return 'Digite seu nome completo.';
+  Future<void> _submitLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
 
-    if (name.length < 3) {
-      return 'Digite um nome válido.';
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    final authProvider = context.read<AuthProvider>();
+
+    final success = await authProvider.login(email: email, password: password);
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pushReplacementNamed(context, '/home');
+      return;
     }
 
-    return null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          authProvider.errorMessage ?? 'Não foi possível realizar o login.',
+        ),
+      ),
+    );
   }
 
   String? _validateEmail(String? value) {
@@ -81,63 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  String? _validateConfirmPassword(String? value) {
-    final confirmPassword = value ?? '';
-
-    if (confirmPassword.isEmpty) {
-      return 'Confirme sua senha.';
-    }
-
-    if (confirmPassword != _passwordController.text) {
-      return 'As senhas não coincidem.';
-    }
-
-    return null;
-  }
-
-  Future<void> _submitRegister() async {
-    setState(() {
-      _hasTriedSubmit = true;
-    });
-
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    final authProvider = context.read<AuthProvider>();
-
-    final success = await authProvider.register(
-      name: name,
-      email: email,
-      password: password,
-    );
-
-    if (!mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Conta criada com sucesso. Faça login para continuar.'),
-        ),
-      );
-
-      Navigator.pushReplacementNamed(context, '/login');
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          authProvider.errorMessage ?? 'Não foi possível criar a conta.',
-        ),
-      ),
-    );
-  }
-
   Widget _buildLabel(String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -147,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         text,
         style: GoogleFonts.montserrat(
           color: isDark ? Colors.white : _gray,
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -155,14 +105,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildTextField({
-    Key? fieldKey,
     required TextEditingController controller,
     required String hintText,
     required String? Function(String?) validator,
-    TextInputType keyboardType = TextInputType.text,
-    bool obscureText = false,
-    VoidCallback? onToggleVisibility,
-    ValueChanged<String>? onChanged,
+    bool isPassword = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fillColor = isDark ? _darkCard : Colors.white;
@@ -171,18 +117,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final iconColor = isDark ? Colors.white70 : Colors.black87;
 
     return TextFormField(
-      key: fieldKey,
       controller: controller,
       validator: validator,
-      onChanged: onChanged,
-      autovalidateMode: _hasTriedSubmit
-          ? AutovalidateMode.onUserInteraction
-          : AutovalidateMode.disabled,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
+      obscureText: isPassword ? _obscurePassword : false,
+      keyboardType: isPassword
+          ? TextInputType.text
+          : TextInputType.emailAddress,
       style: GoogleFonts.montserrat(
         color: textColor,
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
@@ -194,18 +137,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
         filled: true,
         fillColor: fillColor,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
+          horizontal: 16,
+          vertical: 14,
         ),
-        suffixIcon: onToggleVisibility != null
+        suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  obscureText
+                  _obscurePassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   color: iconColor,
                 ),
-                onPressed: onToggleVisibility,
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
               )
             : null,
         enabledBorder: OutlineInputBorder(
@@ -216,43 +163,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: _teal, width: 2),
         ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
-      ),
-    );
-  }
-
-  Widget _buildGradientTitle() {
-    return ShaderMask(
-      blendMode: BlendMode.srcIn,
-      shaderCallback: (bounds) {
-        return const LinearGradient(
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
-          colors: [_blue, _green],
-        ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
-      },
-      child: Text(
-        'Conecta Paraná',
-        textAlign: TextAlign.center,
-        style: GoogleFonts.montserratAlternates(
-          fontSize: 32,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -0.5,
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
       ),
     );
   }
 
-  Widget _buildRegisterButton(bool isLoading) {
+  Widget _buildLoginButton(bool isLoading) {
     return InkWell(
-      onTap: isLoading ? null : _submitRegister,
+      onTap: isLoading ? null : _submitLogin,
       borderRadius: BorderRadius.circular(24),
       child: Container(
         width: 190,
@@ -283,13 +208,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               )
             : Text(
-                'Criar conta',
+                'Entrar',
                 style: GoogleFonts.montserrat(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildOutlinedWelcomeText() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          'Bem-vindo ao',
+          style: GoogleFonts.montserrat(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.5
+              ..color = _teal,
+          ),
+        ),
+
+        Text(
+          'Bem-vindo ao',
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGradientTitle() {
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) {
+        return const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [_blue, _green],
+        ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
+      },
+      child: Text(
+        'Conecta Paraná',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.montserratAlternates(
+          fontSize: 32,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.5,
+        ),
       ),
     );
   }
@@ -303,13 +278,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: isDark ? _darkBackground : Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 36),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 42),
+                const SizedBox(height: 48),
 
                 Image.asset(
                   'assets/images/paranalogo.png',
@@ -317,23 +292,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fit: BoxFit.contain,
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 32),
+
+                _buildOutlinedWelcomeText(),
 
                 _buildGradientTitle(),
 
-                const SizedBox(height: 18),
-
-                _buildLabel('Digite seu nome completo:'),
-
-                const SizedBox(height: 6),
-
-                _buildTextField(
-                  controller: _nameController,
-                  hintText: 'Nome completo',
-                  validator: _validateName,
-                ),
-
-                const SizedBox(height: 18),
+                const SizedBox(height: 40),
 
                 _buildLabel('Digite seu e-mail:'),
 
@@ -345,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: _validateEmail,
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 24),
 
                 _buildLabel('Digite sua senha:'),
 
@@ -355,69 +320,78 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _passwordController,
                   hintText: 'Senha',
                   validator: _validatePassword,
-                  obscureText: _obscurePassword,
-                  onChanged: (_) {
-                    if (_hasTriedSubmit &&
-                        _confirmPasswordController.text.isNotEmpty) {
-                      _confirmPasswordFieldKey.currentState?.validate();
-                    }
-                  },
-                  onToggleVisibility: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+                  isPassword: true,
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 8),
 
-                _buildLabel('Confirme sua senha:'),
-
-                const SizedBox(height: 6),
-
-                _buildTextField(
-                  fieldKey: _confirmPasswordFieldKey,
-                  controller: _confirmPasswordController,
-                  hintText: 'Senha',
-                  validator: _validateConfirmPassword,
-                  obscureText: _obscureConfirmPassword,
-                  onToggleVisibility: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Recuperação de senha ainda não implementada.',
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Esqueceu a senha?',
+                      style: GoogleFonts.montserrat(
+                        color: _teal,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                 ),
-
-                const SizedBox(height: 34),
-
-                _buildRegisterButton(authProvider.isLoading),
 
                 const SizedBox(height: 24),
 
+                _buildLoginButton(authProvider.isLoading),
+
+                const SizedBox(height: 48),
+
                 Text(
-                  'Já possui uma conta?',
+                  'Não possui uma conta?',
                   style: GoogleFonts.montserrat(
                     color: isDark ? Colors.white : _gray,
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
 
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+                    Navigator.pushNamed(context, '/register');
                   },
                   child: Text(
-                    'Entrar',
+                    'Criar conta',
                     style: GoogleFonts.montserrat(
                       color: _teal,
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                TextButton(
+                  onPressed: () {
+                    context.read<AuthProvider>().enterAsGuest();
+                    Navigator.pushReplacementNamed(context, '/home');
+                  },
+                  child: Text(
+                    'Entrar sem conta',
+                    style: GoogleFonts.montserrat(
+                      color: _teal,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
               ],
             ),
           ),
