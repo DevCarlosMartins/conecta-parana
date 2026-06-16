@@ -10,6 +10,7 @@ import { ForbiddenException, ValidationPipe } from '@nestjs/common';
 import { SentryExceptionFilter } from './common/sentry-exception.filter';
 
 const glitchtipDsn = process.env.GLITCHTIP_DSN;
+
 if (glitchtipDsn) {
   Sentry.init({
     dsn: glitchtipDsn,
