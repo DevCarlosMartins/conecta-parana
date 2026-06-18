@@ -34,7 +34,9 @@ export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista notícias (publico, com filtros opcionais' })
+  @ApiOperation({
+    summary: 'Lista notícias publicamente com filtros opcionais',
+  })
   @ApiResponse({ status: 200, description: 'Lista retornada com sucesso' })
   async findAll(@Query() dto: ListNewsQueryDto) {
     return this.newsService.findAll(dto);
@@ -70,7 +72,7 @@ export class NewsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualiza notícia (ADMIN da cidade)' })
-  @ApiResponse({ status: 201, description: 'Notícia atualizada' })
+  @ApiResponse({ status: 200, description: 'Notícia atualizada' })
   @ApiResponse({ status: 401, description: 'Sem token' })
   @ApiResponse({ status: 403, description: 'Admin de outra cidade' })
   @ApiResponse({ status: 404, description: 'Notícia não encontrada' })
@@ -88,7 +90,7 @@ export class NewsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deleta notícia (ADMIN da cidade)' })
-  @ApiResponse({ status: 201, description: 'Notícia deletada' })
+  @ApiResponse({ status: 200, description: 'Notícia deletada' })
   @ApiResponse({ status: 401, description: 'Sem token' })
   @ApiResponse({ status: 403, description: 'Admin de outra cidade' })
   @ApiResponse({ status: 404, description: 'Notícia não encontrada' })

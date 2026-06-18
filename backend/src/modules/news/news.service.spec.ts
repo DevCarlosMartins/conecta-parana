@@ -30,7 +30,6 @@ describe('NewsService', () => {
     jest.clearAllMocks();
   });
 
-  // --------------------- // findAll // ---------------------
   describe('findAll', () => {
     it('sem filtros, busca com where vazio', async () => {
       mockPrisma.client.news.findMany.mockResolvedValue([]);
@@ -77,7 +76,6 @@ describe('NewsService', () => {
     });
   });
 
-  // --------------------- // findOne // ---------------------
   describe('findOne', () => {
     it('retorna a notícia se encontrada', async () => {
       const news = { id: 1, title: 'título', cityId: 1 };
@@ -96,7 +94,6 @@ describe('NewsService', () => {
     });
   });
 
-  // --------------------- // create // ---------------------
   describe('create', () => {
     const dto = {
       title: 'Nova',
@@ -152,8 +149,6 @@ describe('NewsService', () => {
     });
   });
 
-  // --------------------- // update // ---------------------
-
   describe('update', () => {
     it('admin da mesma cidade atualiza com sucesso', async () => {
       mockPrisma.client.news.findUniqueOrThrow.mockResolvedValue({
@@ -193,7 +188,6 @@ describe('NewsService', () => {
     });
   });
 
-  // --------------------- // delete // ---------------------
   describe('remove', () => {
     it('admin da mesma cidade deleta com sucesso', async () => {
       mockPrisma.client.news.findUniqueOrThrow.mockResolvedValue({

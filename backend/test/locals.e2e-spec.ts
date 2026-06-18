@@ -136,13 +136,11 @@ describe('Locals (e2e)', () => {
     };
   }
 
-  // --------------------- // GET /locals // ---------------------
   it('GET /locals — lista pública sem token', async () => {
     const res = await request(app.getHttpServer()).get('/locals').expect(200);
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  // --------------------- // GET /categories // ---------------------
   it('GET /categories — lista pública sem token', async () => {
     const res = await request(app.getHttpServer())
       .get('/categories')
@@ -150,7 +148,6 @@ describe('Locals (e2e)', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  // --------------------- // POST /locals // ---------------------
   it('POST /locals — sem token retorna 401', async () => {
     await request(app.getHttpServer())
       .post('/locals')
@@ -202,7 +199,6 @@ describe('Locals (e2e)', () => {
       .expect(400);
   });
 
-  // --------------------- // GET /locals?categoryId= // ---------------------
   it('GET /locals?categoryId=X — filtra por categoria', async () => {
     const res = await request(app.getHttpServer())
       .get(`/locals?categoryId=${categoryId}`)
@@ -211,7 +207,6 @@ describe('Locals (e2e)', () => {
     expect(items.every((l) => l.categoryId === categoryId)).toBe(true);
   });
 
-  // --------------------- // GET /locals/:id // ---------------------
   it('GET /locals/:id — retorna detalhe com relações e coordinates', async () => {
     const res = await request(app.getHttpServer())
       .get(`/locals/${createdLocalId}`)
@@ -233,7 +228,6 @@ describe('Locals (e2e)', () => {
     await request(app.getHttpServer()).get('/locals/99999999').expect(404);
   });
 
-  // --------------------- // PUT /locals/:id // ---------------------
   it('PUT /locals/:id — admin de outra cidade retorna 403', async () => {
     await request(app.getHttpServer())
       .put(`/locals/${createdLocalId}`)
@@ -253,7 +247,6 @@ describe('Locals (e2e)', () => {
     expect(body.name).toBe('LocalE2E Catedral (editado)');
   });
 
-  // --------------------- // DELETE /locals/:id // ---------------------
   it('DELETE /locals/:id — com evento vinculado retorna 409', async () => {
     await prisma.client.$executeRaw`
       INSERT INTO events (title, description, type, status, coordinates, event_date, city_id, user_id, local_id)

@@ -99,20 +99,25 @@ export class LocalsService {
 
     const local = await this.prisma.client.local.findUnique({
       where: { id },
-      include: { _count: { select: { events: true } } },
+      include: { _count: { select: { events: true, photos: true } } },
     });
-    if (!local) throw new NotFoundException(`Local ${id} não encontrado`);
+
+    if (!local) {
+      throw new NotFoundException(`Local ${id} não encontrado`);
+    }
+
     if (local.cityId !== cityId) {
       throw new ForbiddenException('Você só pode excluir locais da sua cidade');
     }
 
-    if (local._count.events > 0) {
+    if (local._count.events > 0 || local._count.photos > 0) {
       throw new ConflictException(
-        `Não é possível excluir: existem ${local._count.events} evento(s) vinculado(s) a este local`,
+        'Não é possível excluir este local, pois existem eventos ou fotos vinculados a ele',
       );
     }
 
     await this.prisma.client.local.delete({ where: { id } });
+
     return { id, deleted: true };
   }
 

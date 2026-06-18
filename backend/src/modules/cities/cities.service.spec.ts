@@ -19,6 +19,12 @@ const mockPrisma = {
     event: {
       count: jest.fn(),
     },
+    news: {
+      count: jest.fn(),
+    },
+    local: {
+      count: jest.fn(),
+    },
     $transaction: jest.fn(),
   },
 };
@@ -217,6 +223,7 @@ describe('CitiesService', () => {
       mockPrisma.client.city.findUnique.mockResolvedValueOnce(city);
       mockPrisma.client.user.count.mockResolvedValueOnce(0);
       mockPrisma.client.event.count.mockResolvedValueOnce(0);
+      mockPrisma.client.$transaction.mockResolvedValueOnce([0, 0, 0, 0]);
       mockPrisma.client.$transaction.mockImplementationOnce(
         async (queries: Promise<number>[]) => Promise.all(queries),
       );

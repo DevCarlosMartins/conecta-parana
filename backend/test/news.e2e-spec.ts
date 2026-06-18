@@ -11,7 +11,6 @@ describe('News (e2e)', () => {
   let prisma: PrismaService;
 
   let city1Id: number;
-  //let city2Id: number;
   let tokenAdmin1: string;
   let tokenAdmin2: string;
   let tokenUsuario: string;
@@ -43,7 +42,6 @@ describe('News (e2e)', () => {
       data: { name: 'CidadeE2E_2', state: 'PR' },
     });
     city1Id = city1.id;
-    //city2Id = city2.id;
 
     const hashed = await hash(PASSWORD, 10);
     await prisma.client.user.create({
@@ -107,7 +105,6 @@ describe('News (e2e)', () => {
     });
   }
 
-  // --------------------- // POST /news // ---------------------
   it('POST /news — admin cria notícia da própria cidade', async () => {
     const res = await request(app.getHttpServer())
       .post('/news')
@@ -149,7 +146,6 @@ describe('News (e2e)', () => {
       .expect(400);
   });
 
-  // --------------------- // GET /news // ---------------------
   it('GET /news — lista pública sem token', async () => {
     const res = await request(app.getHttpServer()).get('/news').expect(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -163,7 +159,6 @@ describe('News (e2e)', () => {
     expect(items.every((n) => n.cityId === city1Id)).toBe(true);
   });
 
-  // --------------------- // GET /news/:id // ---------------------
   it('GET /news/:id — retorna detalhe', async () => {
     const created = await prisma.client.news.create({
       data: {
@@ -187,7 +182,6 @@ describe('News (e2e)', () => {
     await request(app.getHttpServer()).get('/news/999999').expect(404);
   });
 
-  // --------------------- // PUT /news/:id // ---------------------
   it('PUT /news/:id — admin da mesma cidade atualiza', async () => {
     const news = await prisma.client.news.create({
       data: {
@@ -226,7 +220,6 @@ describe('News (e2e)', () => {
       .expect(403);
   });
 
-  // --------------------- // DELETE /news/:id // ---------------------
   it('DELETE /news/:id — admin da mesma cidade deleta', async () => {
     const news = await prisma.client.news.create({
       data: {

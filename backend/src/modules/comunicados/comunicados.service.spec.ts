@@ -7,7 +7,7 @@ const mockPrisma = {
   client: {
     comunicado: {
       findMany: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -28,7 +28,6 @@ describe('ComunicadoService', () => {
     service = module.get<ComunicadosService>(ComunicadosService);
     jest.clearAllMocks();
   });
-  //-----------------------// find All // --------------------------------------
   describe('findAll', () => {
     it('sem filtro, busca com where vazio', async () => {
       mockPrisma.client.comunicado.findMany.mockResolvedValue([]);
@@ -54,26 +53,21 @@ describe('ComunicadoService', () => {
       expect(result).toEqual([]);
     });
   });
-  //-----------------------// find One // --------------------------------------
   describe('findOne', () => {
     it('Retorna o comunicado encontrado', async () => {
       const comunicado = { id: 1, title: 'titulo comunicado' };
-      mockPrisma.client.comunicado.findUniqueOrThrow.mockResolvedValue(
-        comunicado,
-      );
+      mockPrisma.client.comunicado.findUnique.mockResolvedValue(comunicado);
 
       const result = await service.findOne(1);
 
       expect(result).toEqual(comunicado);
     });
     it('aciona NotFoundException se nao encontrada', async () => {
-      mockPrisma.client.comunicado.findUniqueOrThrow.mockRejectedValue(
-        new Error('not found'),
-      );
+      mockPrisma.client.comunicado.findUnique.mockResolvedValue(null);
+
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
     });
   });
-  //-----------------------// create // --------------------------------------
 
   describe('create', () => {
     const dto = {
@@ -108,20 +102,17 @@ describe('ComunicadoService', () => {
       });
     });
   });
-  //-----------------------// update // --------------------------------------
 
   describe('update', () => {
-    it('comunicado incexistente lanca NotFoundException', async () => {
-      mockPrisma.client.comunicado.findUniqueOrThrow.mockRejectedValue(
-        new Error(),
-      );
+    it('comunicado inexistente lanca NotFoundException', async () => {
+      mockPrisma.client.comunicado.findUnique.mockResolvedValue(null);
 
       await expect(service.update(999, { title: 'titulo' })).rejects.toThrow(
         NotFoundException,
       );
     });
     it(' atualiza comunicado ', async () => {
-      mockPrisma.client.comunicado.findUniqueOrThrow.mockResolvedValue({
+      mockPrisma.client.comunicado.findUnique.mockResolvedValue({
         id: 1,
       });
       mockPrisma.client.comunicado.update.mockResolvedValue({
@@ -136,17 +127,14 @@ describe('ComunicadoService', () => {
       expect(result).toEqual({ id: 1, title: 'novo titulo' });
     });
   });
-  // --------------------- // delete // ---------------------
   describe('remove', () => {
-    it('comunicado incexistente lanca NotFoundException', async () => {
-      mockPrisma.client.comunicado.findUniqueOrThrow.mockRejectedValue(
-        new Error(),
-      );
+    it('comunicado inexistente lanca NotFoundException', async () => {
+      mockPrisma.client.comunicado.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
     });
     it(' deleta comunicado ', async () => {
-      mockPrisma.client.comunicado.findUniqueOrThrow.mockResolvedValue({
+      mockPrisma.client.comunicado.findUnique.mockResolvedValue({
         id: 1,
       });
       mockPrisma.client.comunicado.delete.mockResolvedValue({

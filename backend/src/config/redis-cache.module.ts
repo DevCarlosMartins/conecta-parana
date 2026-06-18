@@ -17,7 +17,7 @@ import { createKeyv } from '@keyv/redis';
 
         return {
           stores: [createKeyv(redisUrl)],
-          ttl: 30_000, // TTL padrão: 30 segundos (em ms)
+          ttl: 30_000,
         };
       },
     }),
