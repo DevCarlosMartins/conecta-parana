@@ -469,29 +469,6 @@ Widget _buildEventDetailRow({
   );
 }
 
-  Widget _buildBottomSheetInfoRow({
-    required IconData icon,
-    required String text,
-    required Color color,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: _teal),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.montserrat(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildEmptyState() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
