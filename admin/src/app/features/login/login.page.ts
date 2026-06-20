@@ -25,6 +25,7 @@ export class LoginPage {
 
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly loading = signal(false);
+  protected readonly showPassword = signal(false);
 
   get emailTouched(): boolean {
     return this.form.controls.email.touched;
@@ -32,8 +33,10 @@ export class LoginPage {
 
   get emailError(): string {
     const ctrl = this.form.controls.email;
+
     if (ctrl.hasError('required')) return 'E-mail é obrigatório.';
     if (ctrl.hasError('email')) return 'E-mail inválido.';
+
     return '';
   }
 
@@ -43,9 +46,19 @@ export class LoginPage {
 
   get passwordError(): string {
     const ctrl = this.form.controls.password;
+
     if (ctrl.hasError('required')) return 'Senha é obrigatória.';
     if (ctrl.hasError('minlength')) return 'Senha deve ter ao menos 8 caracteres.';
+
     return '';
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.showPassword.update((value) => !value);
+  }
+
+  protected onForgotPassword(event: Event): void {
+    event.preventDefault();
   }
 
   onSubmit(): void {
@@ -55,6 +68,7 @@ export class LoginPage {
     }
 
     const { email, password, rememberMe } = this.form.getRawValue();
+
     this.errorMessage.set(null);
     this.loading.set(true);
 
@@ -72,6 +86,7 @@ export class LoginPage {
 
   private messageFor(err: unknown): string {
     const kind: AuthErrorKind = err instanceof AuthError ? err.kind : 'unknown';
+
     switch (kind) {
       case 'invalid_credentials':
         return 'Credenciais inválidas.';
