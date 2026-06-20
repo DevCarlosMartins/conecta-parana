@@ -1,34 +1,61 @@
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+
 import { ApiService } from './api.service';
+import { environment } from '../../../environments/environment';
 
 describe('ApiService', () => {
   let service: ApiService;
+  let httpMock: HttpTestingController;
+  const base = 'http://localhost:3000';
 
   beforeEach(() => {
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(ApiService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  afterEach(() => httpMock.verify());
 
   it('deve ser criado', () => {
     expect(service).toBeTruthy();
   });
 
-  it('create deve retornar os dados enviados e logar com endpoint correto', () => {
-    const data = { title: 'Teste', description: 'Desc' };
-    let result: unknown;
-    service.create('news', data).subscribe((r) => (result = r));
+  it('create deve fazer POST no endpoint correto', () => {
+    const data = { title: 'Teste' };
+    service.create('news', data).subscribe();
 
-    expect(result).toEqual(data);
-    expect(console.log).toHaveBeenCalledWith('[API] POST news:', data);
+    const req = httpMock.expectOne(`${base}/news`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(data);
+    req.flush(data);
   });
 
-  it('create deve funcionar com diferentes endpoints', () => {
-    service.create('events', { id: 1 }).subscribe();
-    expect(console.log).toHaveBeenCalledWith('[API] POST events:', expect.anything());
+  it('getAll deve fazer GET no endpoint correto', () => {
+    service.getAll('news').subscribe();
+
+    const req = httpMock.expectOne(`${base}/news`);
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
+  it('update deve fazer PUT com id correto', () => {
+    const data = { title: 'Editado' };
+    service.update('news', 1, data).subscribe();
+
+    const req = httpMock.expectOne(`${base}/news/1`);
+    expect(req.request.method).toBe('PUT');
+    req.flush(data);
+  });
+
+  it('delete deve fazer DELETE com id correto', () => {
+    service.delete('news', 1).subscribe();
+
+    const req = httpMock.expectOne(`${base}/news/1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
   });
 });

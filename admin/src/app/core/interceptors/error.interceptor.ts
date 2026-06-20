@@ -35,6 +35,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => err);
       }
 
+      if (err.status === 403){
+        console.warn('[Auth] Acesso negado - sem permissão para esta ação.')
+        return throwError(() => err);
+      }
+
       if (err.status !== 401) {
         return throwError(() => err);
       }
