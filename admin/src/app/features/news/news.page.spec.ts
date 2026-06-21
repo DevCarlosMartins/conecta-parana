@@ -4,6 +4,8 @@ import { Validators } from '@angular/forms';
 import { NewsPage } from './news.page';
 import { ApiService } from '../../core/services/api.service';
 import { of } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('NewsPage', () => {
   let fixture: ComponentFixture<NewsPage>;
@@ -16,11 +18,15 @@ describe('NewsPage', () => {
 
     await TestBed.configureTestingModule({
       imports: [NewsPage, RouterModule.forRoot([])],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(NewsPage);
     component = fixture.componentInstance;
     apiService = TestBed.inject(ApiService);
+
+    vi.spyOn(apiService, 'getAll').mockReturnValue(of([]));
+
     el = fixture.nativeElement;
     fixture.detectChanges();
   });
@@ -63,6 +69,7 @@ describe('NewsPage', () => {
       expect(component['defaultFormValues']()).toEqual({
         title: '',
         description: '',
+        type: '',
         linkType: 'external',
         linkUrl: '',
         isActive: true,
@@ -122,7 +129,7 @@ describe('NewsPage', () => {
       ctrl.setValue('http://invalido.com');
       ctrl.updateValueAndValidity();
       expect(component.urlError).toBe('Url da notícia inválida: necessário começar com "https://"');
-
+      
       ctrl.setValue('https://valido.com');
       ctrl.updateValueAndValidity();
       expect(component.urlError).toBe('');
@@ -155,11 +162,16 @@ describe('NewsPage', () => {
     });
 
     it('deve chamar api com dados corretos para link externo', () => {
-      const spy = vi.spyOn(apiService, 'create').mockReturnValue(of({}));
+      const spy = vi.spyOn(apiService, 'create').mockReturnValue(of({
+        id: 1, title: 'Teste', description: 'Desc', type: 'aviso',
+        linkType: 'external', linkUrl: 'https://teste.com', isActive: true,
+      }));
+
       component.openForm();
       component['form'].patchValue({
         title: 'Teste',
         description: 'Desc',
+        type: 'aviso',
         linkType: 'external',
         linkUrl: 'https://teste.com',
       });
@@ -174,17 +186,24 @@ describe('NewsPage', () => {
     });
 
     it('deve gerar slug automaticamente para link interno', () => {
-      const spy = vi.spyOn(apiService, 'create').mockReturnValue(of({}));
+      const spy = vi.spyOn(apiService, 'create').mockReturnValue(of({
+        id: 1, title: 'Notícia Legal', description: 'Desc', type: 'aviso',
+        linkType: 'internal', linkUrl: '/noticia-legal', isActive: true,
+      }));
+
       component.openForm();
       component['linkType'].set('internal');
       component['form'].patchValue({
         title: 'Notícia Legal',
         description: 'Desc',
+        type: 'aviso',
         linkType: 'internal',
       });
       component.onSubmit();
 
-      expect(spy).toHaveBeenCalledWith('news', expect.objectContaining({ linkUrl: '/noticia-legal' }));
+      expect(spy).toHaveBeenCalledWith('news', expect.objectContaining({
+        linkUrl: '/noticia-legal',
+      }));
       expect(component['form'].controls.linkUrl.errors).toBeNull();
     });
 
@@ -194,6 +213,7 @@ describe('NewsPage', () => {
       component['form'].patchValue({
         title: 'Teste',
         description: 'Desc',
+        type: 'aviso',
         linkType: 'external',
         linkUrl: '',
       });

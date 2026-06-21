@@ -1,23 +1,11 @@
-import { Component, inject} from '@angular/core';
+import { Component, inject, OnInit, signal} from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
 import { FormContainer } from '../../shared/components/form-container';
 import { FormField } from '../../shared/components/form-field';
-
-interface LocalFormValues {
-  name: string;
-  phone: string;
-  description: string;
-  latitude: string;
-  longitude: string;
-  category: string;
-  photos: FileList | null;
-}
-
-interface Local extends LocalFormValues {
-  id: string;
-}
+import { LocalForm, LocalItem } from './locals.model';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-locals-page',
@@ -25,8 +13,14 @@ interface Local extends LocalFormValues {
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField],
   templateUrl: './locals.page.html',
 })
-export class LocalsPage extends CrudPage<LocalFormValues> {
+
+export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly api = inject(ApiService);
+
+  readonly items   = signal<LocalItem[]>([]);
+  readonly loading = signal(false);
+  readonly error   = signal<string | null>(null);
 
   protected readonly categories = [
     'Restaurante', 'Hotel', 'Ponto Turístico', 'Parque',
@@ -43,20 +37,38 @@ export class LocalsPage extends CrudPage<LocalFormValues> {
     photos:      [null as FileList | null, Validators.required],
   });
 
-  protected defaultFormValues(): LocalFormValues {
-    return { name: '', phone: '', description: '', latitude: '', longitude: '', category: '', photos: null };
+  protected defaultFormValues(): LocalForm {
+    return { 
+      name: '', 
+      phone: '', 
+      description: '', 
+      latitude: '', 
+      longitude: '', 
+      category: ''};
   }
 
-  // --- Lista ---
-  protected getLocals(): Local[] {
-    return JSON.parse(localStorage.getItem('locais') ?? '[]');
+  ngOnInit(): void {
+    this.loadLocals();
   }
 
-  // --- Abrir formulário de edição ---
-  protected openEdit(local: Local): void {
+  private loadLocals(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.getAll<LocalItem>('locals').subscribe({
+      next: (data) => {
+        this.items.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Não foi possível carregar os local. Tente novamente!');
+        this.loading.set(false);
+      }
+    })
+  }
+
+  protected openEdit(local: LocalItem): void {
     this.editingId.set(local.id);
 
-    // Photos não é serializável, então remove o required ao editar
     this.form.controls.photos.clearValidators();
     this.form.controls.photos.updateValueAndValidity();
 
@@ -72,21 +84,26 @@ export class LocalsPage extends CrudPage<LocalFormValues> {
     this.view.set('form');
   }
 
-  // --- Fechar formulário (override para limpar estado de edição) ---
   override closeForm(): void {
     this.editingId.set(null);
     this.restorePhotosValidator();
     super.closeForm();
   }
 
-  // --- Deletar ---
-  protected deleteLocal(id: string): void {
+  protected deleteLocal(id: number): void {
     if (!confirm('Tem certeza que deseja excluir este local?')) return;
-    const updated = this.getLocals().filter(l => l.id !== id);
-    localStorage.setItem('locais', JSON.stringify(updated));
+
+    this.api.delete('locals', id).subscribe({
+      next: () => {
+        this.items.update((list) => list.filter((l) => l.id !== id));
+      },
+      error: () => {
+        this.error.set('Não foi possível excluir o local. Tente Novamente!');
+      },
+    });
+  
   }
 
-  // --- Submit (criar ou editar) ---
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -94,23 +111,52 @@ export class LocalsPage extends CrudPage<LocalFormValues> {
     }
 
     const raw = this.form.getRawValue();
-    const toSave = { ...raw, photos: null };
-    const existing = this.getLocals();
     const id = this.editingId();
+    this.loading.set(true);
 
-    if (id) {
-      // Edição
-      const index = existing.findIndex(l => l.id === id);
-      if (index !== -1) existing[index] = { ...existing[index], ...toSave };
-    } else {
-      // Criação
-      existing.push({ ...toSave, id: crypto.randomUUID() });
+    const formData = new FormData();
+    formData.append('name', raw.name);
+    formData.append('phone', raw.phone);
+    formData.append('description', raw.description);
+    formData.append('latitude', raw.latitude);
+    formData.append('longitude', raw.longitude);
+    formData.append('category', raw.category);
+ 
+    if (raw.photos) {
+      Array.from(raw.photos).forEach((file) => {
+        formData.append('photos', file);
+      });
     }
 
-    localStorage.setItem('locais', JSON.stringify(existing));
-    this.editingId.set(null);
-    this.restorePhotosValidator();
-    this.view.set('list');
+    if (id) {
+      this.api.update<LocalItem>('locals', id as number, formData).subscribe({
+        next: (updated) => {
+          this.items.update((list) => list.map((l) => (l.id === id ? updated : l)));
+          this.loading.set(false);
+          this.editingId.set(null);
+          this.restorePhotosValidator();
+          this.view.set('list');
+        },
+        error: () => {
+          this.error.set('Não foi possível atualizar o local. Tente novamente!');
+          this.loading.set(false);
+        },
+      });
+    } else {
+      this.api.create<LocalItem>('locals', formData).subscribe({
+        next: (created) => {
+          this.items.update((list) => [...list, created]);
+          this.loading.set(false);
+          this.editingId.set(null);
+          this.restorePhotosValidator();
+          this.view.set('list');
+        },
+        error: () => {
+          this.error.set('Não foi possível criar o local. Tente novamente.');
+          this.loading.set(false);
+        },
+      });
+    }
   }
 
   private restorePhotosValidator(): void {
@@ -118,22 +164,21 @@ export class LocalsPage extends CrudPage<LocalFormValues> {
     this.form.controls.photos.updateValueAndValidity();
   }
 
-  // --- Touched ---
+  onPhotosChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if(input.files?.length) this.form.controls.photos.setValue(input.files);
+  }
+
+
   get nameTouched()      { return this.form.controls.name.touched; }
   get latitudeTouched()  { return this.form.controls.latitude.touched; }
   get longitudeTouched() { return this.form.controls.longitude.touched; }
   get categoryTouched()  { return this.form.controls.category.touched; }
   get photosTouched()    { return this.form.controls.photos.touched; }
 
-  // --- Errors ---
   get nameError():      string { return this.form.controls.name.hasError('required')      ? 'Nome é obrigatório.'        : ''; }
   get latitudeError():  string { return this.form.controls.latitude.hasError('required')  ? 'Latitude é obrigatória.'    : ''; }
   get longitudeError(): string { return this.form.controls.longitude.hasError('required') ? 'Longitude é obrigatória.'   : ''; }
   get categoryError():  string { return this.form.controls.category.hasError('required')  ? 'Categoria é obrigatória.'   : ''; }
   get photosError():    string { return this.form.controls.photos.hasError('required')    ? 'Adicione ao menos uma foto.' : ''; }
-
-  onPhotosChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files?.length) this.form.controls.photos.setValue(input.files);
-  }
 }

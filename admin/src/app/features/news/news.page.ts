@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
@@ -11,32 +11,6 @@ import { noSpecialChars } from '../../shared/validators/no-special-chars.validat
 import { generateSlug } from '../../shared/utils/slug';
 import { NewsForm, NewsItem } from './news.model';
 
-const MOCK_NEWS: NewsItem[] = [
-  {
-    id: 1,
-    title: 'Nova linha de ônibus interurbano conecta Maringá e Londrina',
-    description: 'A partir de maio, uma nova linha de transporte coletivo vai ligar as duas maiores cidades do norte do Paraná com horários ampliados.',
-    linkType: 'external',
-    linkUrl: 'https://exemplo.com/onibus-interurbano',
-    isActive: true,
-  },
-  {
-    id: 2,
-    title: 'Programa de vacinação ampliado para toda a região metropolitana',
-    description: 'Secretaria de Saúde anuncia ampliação da campanha de vacinação com novos postos em 12 municípios da região metropolitana de Curitiba.',
-    linkType: 'internal',
-    linkUrl: '/programa-de-vacinacao-ampliado-para-toda-a-regiao-metropolitana',
-    isActive: true,
-  },
-  {
-    id: 3,
-    title: 'Festival cultural de inverno cancelado por questões orçamentárias',
-    description: 'O festival que aconteceria em julho foi cancelado. A prefeitura informou que os recursos serão redirecionados para obras de infraestrutura.',
-    linkType: 'external',
-    linkUrl: 'https://exemplo.com/festival-cancelado',
-    isActive: false,
-  },
-];
 
 @Component({
   selector: 'app-news-page',
@@ -44,17 +18,20 @@ const MOCK_NEWS: NewsItem[] = [
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField, EntityList, ConfirmDialog],
   templateUrl: './news.page.html',
 })
-export class NewsPage extends CrudPage<NewsForm> {
+export class NewsPage extends CrudPage<NewsForm> implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
 
   protected readonly linkType = signal<'external' | 'internal'>('external');
-  readonly items = signal<NewsItem[]>(MOCK_NEWS);
+  readonly items = signal<NewsItem[]>([]);
   readonly deletingItem = signal<NewsItem | null>(null);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, noSpecialChars()]],
     description: ['', Validators.required],
+    type: ['', Validators.required],
     linkType: ['external' as 'internal' | 'external'],
     linkUrl: [''],
     isActive: [true],
@@ -64,10 +41,30 @@ export class NewsPage extends CrudPage<NewsForm> {
     return {
       title: '',
       description: '',
+      type: '',
       linkType: 'external',
       linkUrl: '',
       isActive: true,
     };
+  }
+
+  ngOnInit(): void {
+    this.loadNews();
+  }
+
+  private loadNews(): void{
+    this.loading.set(true);
+    this.error.set(null);
+    this.api.getAll<NewsItem>('news').subscribe({
+      next: (data) => {
+        this.items.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Não foi possível carregaras notícias. Tente novamente!');
+        this.loading.set(false);
+      },
+    });
   }
 
   override openForm(): void {
@@ -93,8 +90,17 @@ export class NewsPage extends CrudPage<NewsForm> {
   executeDelete(): void {
     const item = this.deletingItem();
     if (!item) return;
-    this.items.update((list) => list.filter((n) => n.id !== item.id));
-    this.deletingItem.set(null);
+
+    this.api.delete('news', item.id).subscribe({
+      next: () => {
+        this.items.update((list) => list.filter((n) => n.id !== item.id));
+        this.deletingItem.set(null);
+      },
+      error: () => {
+        this.error.set('Não foi possivel excluir a notícia. Tente novamente!');
+        this.deletingItem.set(null);
+      },
+    });
   }
 
   get titleTouched(): boolean {
@@ -157,20 +163,35 @@ export class NewsPage extends CrudPage<NewsForm> {
     }
 
     const id = this.editingId();
-    if (id) {
-      this.items.update((list) =>
-        list.map((n) => (n.id === id ? { ...n, ...raw } : n))
-      );
-    } else {
-      this.api.create('news', raw).subscribe(() => {
-        this.view.set('list');
-      })
-      const newItem: NewsItem = { ...raw, id: Date.now() };
-      this.items.update((list) => [...list, newItem]);
-    }
+    this.loading.set(true);
 
-    this.editingId.set(null);
-    this.view.set('list');
+    if (id) {
+      this.api.update<NewsItem>('news', id as number, raw).subscribe({
+        next: (updated) => {
+          this.items.update((list) => list.map((n) => (n.id === id ? updated : n)));
+          this.loading.set(false);
+          this.editingId.set(null);
+          this.view.set('list');
+        },
+        error: () => {
+          this.error.set('Não foi possivel atualizar a notícia. Tente novamente!');
+          this.loading.set(false);
+        }
+      }) 
+    } else {
+      this.api.create<NewsItem>('news', raw).subscribe({
+        next: (created) => {
+          this.items.update((list) => [...list, created]);
+          this.loading.set(false);
+          this.editingId.set(null);
+          this.view.set('list');
+        },
+        error: () => {
+          this.error.set('Não foi possivel criar a notícia. Tente novamente!');
+          this.loading.set(false);
+        },
+      });
+    }
   }
 
   protected generateSlugPreview(title: string): string {

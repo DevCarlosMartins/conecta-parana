@@ -1,7 +1,7 @@
 @if (view() === 'list') {
   <app-page-header title="LOCAIS" buttonLabel="Criar local" (create)="openForm()" />
 
-  @let locals = getLocals();
+  @let locals = items();
 
   @if (locals.length === 0) {
     <div class="mt-10 text-center text-gray-400 text-sm">

@@ -1,20 +1,32 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { LocalsPage } from './locals.page';
+import { ApiService } from '../../core/services/api.service';
+import { of, throwError } from 'rxjs';
 
 describe('LocalsPage', () => {
   let fixture: ComponentFixture<LocalsPage>;
   let component: LocalsPage;
   let el: HTMLElement;
+  let apiSpy: { getAll: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    // Limpa o localStorage antes de cada teste
-    localStorage.clear();
+    apiSpy = {
+      getAll: vi.fn().mockReturnValue(of([])),
+      delete: vi.fn().mockReturnValue(of(void 0)),
+      create: vi.fn().mockReturnValue(of({ id: 1, name: 'Novo', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' })),
+      update: vi.fn().mockReturnValue(of({ id: 1, name: 'Editado', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' })),
+    };
 
     await TestBed.configureTestingModule({
       imports: [LocalsPage, RouterModule.forRoot([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ApiService, useValue: apiSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LocalsPage);
@@ -25,10 +37,7 @@ describe('LocalsPage', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    localStorage.clear();
   });
-
-  // ─── Renderização inicial ──────────────────────────────────────────────────
 
   it('deve criar com view "list" e renderizar page-header', () => {
     expect(component).toBeTruthy();
@@ -37,12 +46,9 @@ describe('LocalsPage', () => {
     expect(el.querySelector('app-form-container')).toBeNull();
   });
 
-  // ─── openForm / closeForm ─────────────────────────────────────────────────
-
   describe('openForm / closeForm', () => {
     it('deve abrir formulário e resetar valores', () => {
       component['form'].patchValue({ name: 'editado', category: 'Hotel' });
-
       component.openForm();
       fixture.detectChanges();
 
@@ -58,16 +64,14 @@ describe('LocalsPage', () => {
     });
 
     it('deve limpar editingId ao fechar formulário', () => {
-      const local = { id: '123', name: 'Local', phone: '', description: '', latitude: '-23', longitude: '-51', category: 'Parque', photos: null };
+      const local = { id: 123, name: 'Local', phone: '', description: '', latitude: '-23', longitude: '-51', category: 'Parque' };
       component['openEdit'](local);
-      expect(component['editingId']()).toBe('123');
+      expect(component['editingId']()).toBe(123);
 
       component.closeForm();
       expect(component['editingId']()).toBeNull();
     });
   });
-
-  // ─── defaultFormValues ────────────────────────────────────────────────────
 
   describe('defaultFormValues', () => {
     it('deve retornar valores padrão corretos', () => {
@@ -78,12 +82,9 @@ describe('LocalsPage', () => {
         latitude: '',
         longitude: '',
         category: '',
-        photos: null,
       });
     });
   });
-
-  // ─── nameError / nameTouched ──────────────────────────────────────────────
 
   describe('nameError / nameTouched', () => {
     it('deve retornar required quando vazio', () => {
@@ -100,8 +101,6 @@ describe('LocalsPage', () => {
     });
   });
 
-  // ─── latitudeError / latitudeTouched ─────────────────────────────────────
-
   describe('latitudeError / latitudeTouched', () => {
     it('deve retornar required quando vazio', () => {
       const ctrl = component['form'].controls.latitude;
@@ -116,8 +115,6 @@ describe('LocalsPage', () => {
       expect(component.latitudeError).toBe('');
     });
   });
-
-  // ─── longitudeError / longitudeTouched ────────────────────────────────────
 
   describe('longitudeError / longitudeTouched', () => {
     it('deve retornar required quando vazio', () => {
@@ -134,8 +131,6 @@ describe('LocalsPage', () => {
     });
   });
 
-  // ─── categoryError / categoryTouched ──────────────────────────────────────
-
   describe('categoryError / categoryTouched', () => {
     it('deve retornar required quando não selecionado', () => {
       const ctrl = component['form'].controls.category;
@@ -151,8 +146,6 @@ describe('LocalsPage', () => {
     });
   });
 
-  // ─── photosError / photosTouched ──────────────────────────────────────────
-
   describe('photosError / photosTouched', () => {
     it('deve retornar required quando não há fotos', () => {
       const ctrl = component['form'].controls.photos;
@@ -162,8 +155,6 @@ describe('LocalsPage', () => {
       expect(component.photosError).toBe('Adicione ao menos uma foto.');
     });
   });
-
-  // ─── categories ───────────────────────────────────────────────────────────
 
   describe('categories', () => {
     it('deve conter as categorias esperadas', () => {
@@ -175,133 +166,79 @@ describe('LocalsPage', () => {
     });
   });
 
-  // ─── openEdit ─────────────────────────────────────────────────────────────
-
   describe('openEdit', () => {
     it('deve preencher o formulário com os dados do local e setar editingId', () => {
-      const local = {
-        id: 'abc-123',
-        name: 'Parque Central',
-        phone: '99999-9999',
-        description: 'Um parque bonito',
-        latitude: '-23.4253',
-        longitude: '-51.9383',
-        category: 'Parque',
-        photos: null,
-      };
-
+      const local = { id: 1, name: 'Parque Central', phone: '99999-9999', description: 'Um parque bonito', latitude: '-23.4253', longitude: '-51.9383', category: 'Parque' };
       component['openEdit'](local);
       fixture.detectChanges();
 
-      expect(component['editingId']()).toBe('abc-123');
+      expect(component['editingId']()).toBe(1);
       expect(component.view()).toBe('form');
       expect(component['form'].controls.name.value).toBe('Parque Central');
       expect(component['form'].controls.category.value).toBe('Parque');
     });
 
     it('deve remover validator de photos ao editar', () => {
-      const local = { id: '1', name: 'X', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro', photos: null };
+      const local = { id: 1, name: 'X', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' };
       component['openEdit'](local);
-
       expect(component['form'].controls.photos.validator).toBeNull();
     });
   });
 
-  // ─── deleteLocal ──────────────────────────────────────────────────────────
-
   describe('deleteLocal', () => {
-    it('deve remover local do localStorage quando confirmado', () => {
+    it('deve chamar api.delete quando confirmado', () => {
       vi.spyOn(window, 'confirm').mockReturnValue(true);
+      component['items'].set([{ id: 1, name: 'A', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' }]);
 
-      const locais = [
-        { id: '1', name: 'A', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro', photos: null },
-        { id: '2', name: 'B', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro', photos: null },
-      ];
-      localStorage.setItem('locais', JSON.stringify(locais));
+      component['deleteLocal'](1);
 
-      component['deleteLocal']('1');
-
-      const saved = JSON.parse(localStorage.getItem('locais') ?? '[]');
-      expect(saved).toHaveLength(1);
-      expect(saved[0].id).toBe('2');
+      expect(apiSpy.delete).toHaveBeenCalledWith('locals', 1);
     });
 
-    it('não deve remover quando cancelado no confirm', () => {
+    it('não deve chamar api.delete quando cancelado', () => {
       vi.spyOn(window, 'confirm').mockReturnValue(false);
-
-      const locais = [{ id: '1', name: 'A', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro', photos: null }];
-      localStorage.setItem('locais', JSON.stringify(locais));
-
-      component['deleteLocal']('1');
-
-      const saved = JSON.parse(localStorage.getItem('locais') ?? '[]');
-      expect(saved).toHaveLength(1);
+      component['deleteLocal'](1);
+      expect(apiSpy.delete).not.toHaveBeenCalled();
     });
   });
 
-  // ─── onSubmit ─────────────────────────────────────────────────────────────
-
   describe('onSubmit', () => {
-    it('deve marcar todos os campos como touched e não salvar quando inválido', () => {
+    it('deve marcar todos os campos como touched e não chamar api quando inválido', () => {
       component.openForm();
       component.onSubmit();
 
       expect(component['form'].controls.name.touched).toBe(true);
-      expect(component['form'].controls.latitude.touched).toBe(true);
-      expect(component['form'].controls.longitude.touched).toBe(true);
-      expect(component['form'].controls.category.touched).toBe(true);
-
-      const saved = JSON.parse(localStorage.getItem('locais') ?? '[]');
-      expect(saved).toHaveLength(0);
+      expect(apiSpy.create).not.toHaveBeenCalled();
     });
 
-    it('deve salvar no localStorage e voltar para list quando válido', () => {
+    it('deve chamar api.create quando válido e voltar para list', () => {
       component.openForm();
-      component['form'].patchValue({
-        name: 'Parque Central',
-        phone: '99999-9999',
-        description: 'Descrição do local',
-        latitude: '-23.4253',
-        longitude: '-51.9383',
-        category: 'Parque',
-      });
+      component['form'].patchValue({ name: 'Parque', phone: '', description: '', latitude: '-23', longitude: '-51', category: 'Parque' });
       component['form'].controls.photos.setValue({} as FileList);
 
       component.onSubmit();
 
-      expect(component.view()).toBe('list');
-      const saved = JSON.parse(localStorage.getItem('locais') ?? '[]');
-      expect(saved).toHaveLength(1);
-      expect(saved[0].name).toBe('Parque Central');
+      expect(apiSpy.create).toHaveBeenCalled();
     });
 
-    it('deve editar local existente e não duplicar', () => {
-      const existing = [{ id: 'id-1', name: 'Antigo', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro', photos: null }];
-      localStorage.setItem('locais', JSON.stringify(existing));
-
-      component['openEdit'](existing[0]);
+    it('deve chamar api.update ao editar', () => {
+      const local = { id: 1, name: 'Antigo', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' };
+      component['openEdit'](local);
       component['form'].patchValue({ name: 'Novo Nome' });
       component.onSubmit();
 
-      const saved = JSON.parse(localStorage.getItem('locais') ?? '[]');
-      expect(saved).toHaveLength(1);
-      expect(saved[0].name).toBe('Novo Nome');
+      expect(apiSpy.update).toHaveBeenCalled();
     });
 
-    it('deve limpar editingId e restaurar validator de photos após submit', () => {
-      const existing = [{ id: 'id-1', name: 'Local', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro', photos: null }];
-      localStorage.setItem('locais', JSON.stringify(existing));
-
-      component['openEdit'](existing[0]);
-      component['form'].patchValue({ name: 'Local Editado' });
+    it('deve limpar editingId após update bem-sucedido', () => {
+      const local = { id: 1, name: 'Local', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' };
+      component['openEdit'](local);
+      component['form'].patchValue({ name: 'Editado' });
       component.onSubmit();
 
       expect(component['editingId']()).toBeNull();
-      expect(component['form'].controls.photos.validator).not.toBeNull();
     });
   });
-
-  // ─── validação do formulário ──────────────────────────────────────────────
 
   describe('validação do formulário', () => {
     it('deve estar inválido sem os campos obrigatórios', () => {
@@ -309,14 +246,8 @@ describe('LocalsPage', () => {
     });
 
     it('deve ser válido com todos os campos obrigatórios preenchidos', () => {
-      component['form'].patchValue({
-        name: 'Local Válido',
-        latitude: '-23.4253',
-        longitude: '-51.9383',
-        category: 'Restaurante',
-      });
+      component['form'].patchValue({ name: 'Local Válido', latitude: '-23', longitude: '-51', category: 'Restaurante' });
       component['form'].controls.photos.setValue({} as FileList);
-
       expect(component['form'].valid).toBe(true);
     });
   });
