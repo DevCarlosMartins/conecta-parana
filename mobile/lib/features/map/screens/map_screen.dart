@@ -26,6 +26,8 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   bool _isLoading = true;
 
+  MapPointMock? _selectedPoint;
+
   static const Color _blue = Color(0xFF264CA9);
   static const Color _green = Color(0xFF029144);
   static const Color _teal = Color(0xFF146E77);
@@ -37,6 +39,11 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+
+    if (mapPointsMock.isNotEmpty) {
+      _selectedPoint = mapPointsMock.first;
+    }
+
     _simulateLoading();
   }
 
@@ -150,54 +157,365 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildMapPlaceholder() {
+  Widget _buildInteractiveMap() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      width: double.infinity,
-      height: 360,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? _darkCard : _lightBackground,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _teal, width: 1.4),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.map_outlined, color: _teal, size: 56),
-          const SizedBox(height: 16),
-          Text(
-            'Mapa de eventos',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
-              color: isDark ? Colors.white : _gray,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 390,
+          decoration: BoxDecoration(
+            color: isDark ? _darkCard : _lightBackground,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: _teal, width: 1.4),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.12),
+                blurRadius: 10,
+                offset: const Offset(2, 5),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Aqui serão exibidos os eventos próximos a você em Maringá.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
-              color: isDark ? Colors.white70 : _gray,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              height: 1.35,
-            ),
+          clipBehavior: Clip.antiAlias,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  _buildMockMapBackground(isDark: isDark),
+
+                  ...mapPointsMock.map((point) {
+                    final isSelected = _selectedPoint?.title == point.title;
+
+                    return Positioned(
+                      top: constraints.maxHeight * point.markerTop,
+                      left: constraints.maxWidth * point.markerLeft,
+                      child: Transform.translate(
+                        offset: const Offset(-24, -24),
+                        child: _buildMapMarker(
+                          point: point,
+                          isSelected: isSelected,
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 18),
-          Text(
-            '${mapPointsMock.length} pontos mockados preparados',
-            textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+
+        _buildSelectedPointCard(),
+      ],
+    );
+  }
+
+  Widget _buildMockMapBackground({required bool isDark}) {
+    final backgroundColor = isDark
+        ? const Color(0xFF16332F)
+        : const Color(0xFFD8F0DE);
+    final blockColor = isDark
+        ? const Color(0xFF21453E)
+        : const Color(0xFFA8D9B6);
+    final roadColor = isDark ? const Color(0xFF2A2A2A) : Colors.white;
+    final parkColor = isDark
+        ? const Color(0xFF0F5A43)
+        : const Color(0xFF6FCF97);
+
+    return Stack(
+      children: [
+        Positioned.fill(child: Container(color: backgroundColor)),
+        Positioned(
+          top: 28,
+          left: 24,
+          right: 24,
+          height: 70,
+          child: _buildMapBlock(blockColor),
+        ),
+        Positioned(
+          top: 130,
+          left: 32,
+          width: 120,
+          height: 82,
+          child: _buildMapBlock(blockColor),
+        ),
+        Positioned(
+          top: 122,
+          right: 28,
+          width: 145,
+          height: 90,
+          child: _buildMapBlock(blockColor),
+        ),
+        Positioned(
+          bottom: 70,
+          left: 30,
+          width: 150,
+          height: 115,
+          child: _buildMapPark(parkColor),
+        ),
+        Positioned(
+          bottom: 52,
+          right: 28,
+          width: 120,
+          height: 145,
+          child: _buildMapPark(parkColor),
+        ),
+
+        _buildMapRoad(
+          top: 110,
+          left: 0,
+          right: 0,
+          height: 16,
+          color: roadColor,
+        ),
+        _buildMapRoad(
+          top: 230,
+          left: 0,
+          right: 0,
+          height: 16,
+          color: roadColor,
+        ),
+        _buildMapRoad(
+          top: 310,
+          left: 0,
+          right: 0,
+          height: 14,
+          color: roadColor,
+        ),
+
+        _buildMapRoad(top: 0, bottom: 0, left: 88, width: 16, color: roadColor),
+        _buildMapRoad(
+          top: 0,
+          bottom: 0,
+          left: 190,
+          width: 16,
+          color: roadColor,
+        ),
+        _buildMapRoad(
+          top: 0,
+          bottom: 0,
+          right: 78,
+          width: 16,
+          color: roadColor,
+        ),
+
+        Positioned(
+          top: 50,
+          right: 38,
+          child: Text(
+            'Centro',
             style: GoogleFonts.montserrat(
-              color: _teal,
-              fontSize: 13,
+              color: isDark ? Colors.white70 : _teal,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMapBlock(Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  Widget _buildMapPark(Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(999),
+      ),
+    );
+  }
+
+  Widget _buildMapRoad({
+    double? top,
+    double? bottom,
+    double? left,
+    double? right,
+    double? width,
+    double? height,
+    required Color color,
+  }) {
+    return Positioned(
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapMarker({
+    required MapPointMock point,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPoint = point;
+        });
+      },
+      child: AnimatedScale(
+        scale: isSelected ? 1.16 : 1,
+        duration: const Duration(microseconds: 180),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: point.markerColor,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected
+                  ? Colors.white
+                  : point.markerColor.withValues(alpha: 0.35),
+              width: isSelected ? 4 : 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: point.markerColor.withValues(alpha: 0.45),
+                blurRadius: 12,
+                offset: const Offset(1, 4),
+              ),
+            ],
+          ),
+          child: Icon(point.icon, color: Colors.white, size: 23),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedPointCard() {
+    final point = _selectedPoint;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (point == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _teal),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.10),
+            blurRadius: 8,
+            offset: const Offset(2, 4),
+          ),
         ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadiusGeometry.circular(14),
+            child: Image.asset(
+              point.imagePath,
+              width: 82,
+              height: 82,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 82,
+                  height: 82,
+                  color: isDark ? const Color(0xFF2A2A2A) : _lightBackground,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: _teal,
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCategoryPill(point.category, point.markerColor),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  point.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    color: isDark ? Colors.white : _gray,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  point.address,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    color: isDark ? Colors.white70 : _gray,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Row(
+                  children: [
+                    const Icon(Icons.near_me_outlined, color: _teal, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      point.distanceLabel,
+                      style: GoogleFonts.montserrat(
+                        color: _teal,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryPill(String category, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color),
+      ),
+      child: Text(
+        category,
+        style: GoogleFonts.montserrat(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -264,7 +582,7 @@ class _MapScreenState extends State<MapScreen> {
         else if (_isLoading)
           _buildLoadingSkeleton()
         else ...[
-          _buildMapPlaceholder(),
+          _buildInteractiveMap(),
           _buildPostGisInfoCard(),
         ],
       ],
