@@ -8,7 +8,7 @@ import { environment } from '../../../environments/environment';
 describe('ApiService', () => {
   let service: ApiService;
   let httpMock: HttpTestingController;
-  const base = 'http://localhost:3000';
+ const base = environment.apiUrl;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
