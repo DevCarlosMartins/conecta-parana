@@ -9,21 +9,16 @@ import { inject } from '@angular/core';
 import { BehaviorSubject, Observable, catchError, filter, switchMap, take, throwError } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
+import { ToastService } from '../../shared/components/toast.service';
 
 const SKIP_PATHS = ['/auth/login', '/auth/refresh'];
 
 let isRefreshing = false;
 const refreshedToken$ = new BehaviorSubject<string | null>(null);
 
-/**
- * @description
- * Trata falhas HTTP relacionadas à autenticação:
- * - 401 em qualquer requisição autenticada - renova o token e reexecuta a requisição.
- * - 401 em /auth/refresh - força logout.
- * - Qualquer erro em /auth/login ou /auth/refresh - propaga sem alteração para que o serviço trate o erro.
- */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
+  const toast = inject(ToastService);
 
   return next(req).pipe(
     catchError((err: unknown) => {
@@ -35,8 +30,18 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => err);
       }
 
-      if (err.status === 403){
-        console.warn('[Auth] Acesso negado - sem permissão para esta ação.')
+      if (err.status === 403) {
+        toast.show('Você não tem permissão para realizar esta ação.', 'warning');
+        return throwError(() => err);
+      }
+
+      if (err.status === 0) {
+        toast.show('Servidor fora do ar. Verifique sua conexão.', 'error');
+        return throwError(() => err);
+      }
+
+      if (err.status >= 500) {
+        toast.show('Erro interno do servidor. Tente novamente.', 'error');
         return throwError(() => err);
       }
 
