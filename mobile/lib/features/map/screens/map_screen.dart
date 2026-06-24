@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -162,9 +163,12 @@ class _MapScreenState extends State<MapScreen> {
 
   Widget _buildInteractiveMap() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final mapHeight = (MediaQuery.sizeOf(context).height * 0.54)
-        .clamp(430.0, 560.0)
+    final screenSize = MediaQuery.sizeOf(context);
+    final isCompactScreen = screenSize.width < 420 || screenSize.height < 720;
+    final mapHeight = (screenSize.height * (isCompactScreen ? 0.40 : 0.48))
+        .clamp(300.0, 500.0)
         .toDouble();
+    final initialZoom = isCompactScreen ? 12.1 : 12.7;
 
     return Column(
       children: [
@@ -187,12 +191,12 @@ class _MapScreenState extends State<MapScreen> {
           child: Stack(
             children: [
               FlutterMap(
-                options: const MapOptions(
+                options: MapOptions(
                   initialCenter: _maringaCenter,
-                  initialZoom: 13.2,
+                  initialZoom: initialZoom,
                   minZoom: 11,
                   maxZoom: 18,
-                  interactionOptions: InteractionOptions(
+                  interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),
                 ),
@@ -226,7 +230,7 @@ class _MapScreenState extends State<MapScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 30),
         _buildSelectedPointCard(),
       ],
     );
@@ -316,6 +320,7 @@ class _MapScreenState extends State<MapScreen> {
               },
             ),
           ),
+
           const SizedBox(width: 12),
 
           Expanded(
@@ -350,18 +355,67 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
-                Row(
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Icon(Icons.near_me_outlined, color: _teal, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      point.distanceLabel,
-                      style: GoogleFonts.montserrat(
-                        color: _teal,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.near_me_outlined,
+                          color: _teal,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          point.distanceLabel,
+                          style: GoogleFonts.montserrat(
+                            color: _teal,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    InkWell(
+                      onTap: () => _openDirections(point),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _green.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: _green.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.directions_outlined,
+                              color: _green,
+                              size: 15,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Como chegar',
+                              style: GoogleFonts.montserrat(
+                                color: _green,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -426,6 +480,24 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ],
     );
+  }
+
+  Future<void> _openDirections(MapPointMock point) async {
+    final uri = Uri.https('www.google.com', '/maps/dir/', {
+      'api': '1',
+      'destination': '${point.latitude}, ${point.longitude}',
+      'travelmode': 'driving',
+    });
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Não foi possível abrir a rota para ${point.title}'),
+        ),
+      );
+    }
   }
 
   @override
