@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       options: CarouselOptions(
-        height: 230,
+        height: 250,
         viewportFraction: 0.78,
         enlargeCenterPage: true,
         enableInfiniteScroll: homeNewsMock.length > 1,
