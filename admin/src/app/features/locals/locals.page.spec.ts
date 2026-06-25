@@ -4,7 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { LocalsPage } from './locals.page';
 import { ApiService } from '../../core/services/api.service';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 describe('LocalsPage', () => {
   let fixture: ComponentFixture<LocalsPage>;

@@ -7,6 +7,7 @@ import { FormField } from '../../shared/components/form-field';
 import { noSpecialChars } from '../../shared/validators/no-special-chars.validator';
 import { Post, PostForm } from './posts.model';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast.service';
 
 interface PostFormValues {
   title: string;
@@ -20,13 +21,14 @@ interface PostFormValues {
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField],
   templateUrl: './posts.page.html',
 })
+
 export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly api = inject(ApiService);
+  private readonly fb    = inject(FormBuilder);
+  private readonly api   = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   readonly posts   = signal<Post[]>([]);
   readonly loading = signal(false);
-  readonly error   = signal<string | null>(null);
 
   readonly categories = [
     { value: 'evento', label: 'Evento' },
@@ -54,14 +56,13 @@ export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
 
   private loadPosts(): void {
     this.loading.set(true);
-    this.error.set(null);
     this.api.getAll<Post>('comunicados').subscribe({
       next: (data) => {
         this.posts.set(data);
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Não foi possivel carregar as postagens. Tente novamente!');
+        this.toast.show('Não foi possivel carregar as postagens. Tente novamente!');
         this.loading.set(false);
       },
     });
@@ -158,7 +159,7 @@ export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
         this.posts.update((list) => list.filter((post) => post.id !== id));
       },
       error: () => {
-        this.error.set('Não foi possível excluir a postagem. Tente novamente!');
+        this.toast.show('Não foi possível excluir a postagem. Tente novamente!');
       },
     });
   }
@@ -183,7 +184,7 @@ export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
           this.closeForm();
         },
         error: () => {
-          this.error.set('Não foi possível atualizar a postagem. Tente novamente!');
+          this.toast.show('Não foi possível atualizar a postagem. Tente novamente!');
           this.loading.set(false);
         },
       });
@@ -195,7 +196,7 @@ export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
           this.closeForm();
         },
         error: () => {
-          this.error.set('Não foi possivel criar a postagem. Tente novamente!');
+          this.toast.show('Não foi possivel criar a postagem. Tente novamente!');
           this.loading.set(false);
         },
       });

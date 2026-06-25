@@ -10,6 +10,7 @@ import { ApiService } from '../../core/services/api.service';
 import { noSpecialChars } from '../../shared/validators/no-special-chars.validator';
 import { generateSlug } from '../../shared/utils/slug';
 import { NewsForm, NewsItem } from './news.model';
+import { ToastService } from '../../shared/components/toast.service';
 
 
 @Component({
@@ -18,9 +19,11 @@ import { NewsForm, NewsItem } from './news.model';
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField, EntityList, ConfirmDialog],
   templateUrl: './news.page.html',
 })
+
 export class NewsPage extends CrudPage<NewsForm> implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   protected readonly linkType = signal<'external' | 'internal'>('external');
   readonly items = signal<NewsItem[]>([]);
@@ -54,14 +57,13 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
 
   private loadNews(): void{
     this.loading.set(true);
-    this.error.set(null);
     this.api.getAll<NewsItem>('news').subscribe({
       next: (data) => {
         this.items.set(data);
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Não foi possível carregaras notícias. Tente novamente!');
+        this.toast.show('Não foi possível carregaras notícias. Tente novamente!');
         this.loading.set(false);
       },
     });
@@ -97,7 +99,7 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
         this.deletingItem.set(null);
       },
       error: () => {
-        this.error.set('Não foi possivel excluir a notícia. Tente novamente!');
+        this.toast.show('Não foi possivel excluir a notícia. Tente novamente!');
         this.deletingItem.set(null);
       },
     });
@@ -174,7 +176,7 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
           this.view.set('list');
         },
         error: () => {
-          this.error.set('Não foi possivel atualizar a notícia. Tente novamente!');
+          this.toast.show('Não foi possivel atualizar a notícia. Tente novamente!');
           this.loading.set(false);
         }
       }) 
@@ -187,7 +189,7 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
           this.view.set('list');
         },
         error: () => {
-          this.error.set('Não foi possivel criar a notícia. Tente novamente!');
+          this.toast.show('Não foi possivel criar a notícia. Tente novamente!');
           this.loading.set(false);
         },
       });

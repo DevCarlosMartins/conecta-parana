@@ -5,6 +5,7 @@ import { PageHeader } from '../../shared/components/page-header';
 import { FormContainer } from '../../shared/components/form-container';
 import { FormField } from '../../shared/components/form-field';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast.service';
 
 interface NotificationForm {
   title: string;
@@ -22,13 +23,14 @@ interface NotificationItem extends NotificationForm {
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField],
   templateUrl: 'notification.page.html',
 })
+
 export class NotificationComponent extends CrudPage<NotificationForm> implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly api = inject(ApiService);
+  private readonly fb    = inject(FormBuilder);
+  private readonly api   = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   readonly items = signal<NotificationItem[]>([]);
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
 
   override readonly editingId = signal<string | number | null>(null);
 
@@ -48,14 +50,13 @@ export class NotificationComponent extends CrudPage<NotificationForm> implements
 
   private loadNotifications(): void {
     this.loading.set(true);
-    this.error.set(null);
     this.api.getAll<NotificationItem>('notifications').subscribe({
       next: (data) => {
         this.items.set(data);
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Não foi possível carregar as notificações. Tente novamente.');
+        this.toast.show('Não foi possível carregar as notificações. Tente novamente.');
         this.loading.set(false);
       },
     });
@@ -71,7 +72,9 @@ export class NotificationComponent extends CrudPage<NotificationForm> implements
     return '';
   }
 
-  get descriptionTouched(): boolean { return this.form.controls.description.touched; }
+  get descriptionTouched(): boolean { 
+    return this.form.controls.description.touched; 
+  }
 
   get descriptionError(): string {
     const ctrl = this.form.controls.description;
@@ -98,7 +101,7 @@ export class NotificationComponent extends CrudPage<NotificationForm> implements
         this.view.set('list');
       },
       error: () => {
-        this.error.set('Não foi possível enviar a notificação. Tente novamente.');
+        this.toast.show('Não foi possível enviar a notificação. Tente novamente.');
         this.loading.set(false);
       },
     });
