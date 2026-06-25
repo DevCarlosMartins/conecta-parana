@@ -503,17 +503,27 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? _darkBackground : Colors.white;
 
-    return Container(
-      color: isDark ? _darkBackground : Colors.white,
+    return ColoredBox(
+      color: backgroundColor,
       child: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshMap,
           color: _teal,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            child: _buildContent(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: _buildContent(),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
