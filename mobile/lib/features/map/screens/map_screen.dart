@@ -485,7 +485,7 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _openDirections(MapPointMock point) async {
     final uri = Uri.https('www.google.com', '/maps/dir/', {
       'api': '1',
-      'destination': '${point.latitude}, ${point.longitude}',
+      'destination': '${point.latitude},${point.longitude}',
       'travelmode': 'driving',
     });
 
