@@ -10,7 +10,8 @@ import { ToastService } from '../../shared/components/toast.service';
 interface NotificationForm {
   title: string;
   description: string;
-  type: string;
+  eventId?: number;
+  comunicadoId?: number;
 }
 
 interface NotificationItem extends NotificationForm {
@@ -37,11 +38,10 @@ export class NotificationComponent extends CrudPage<NotificationForm> implements
   protected readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
     description: ['', [Validators.required, Validators.minLength(10)]],
-    type: ['', Validators.required],
   });
 
   protected defaultFormValues(): NotificationForm {
-    return { title: '', description: '', type: '' };
+    return { title: '', description: '' };
   }
 
   ngOnInit(): void {
