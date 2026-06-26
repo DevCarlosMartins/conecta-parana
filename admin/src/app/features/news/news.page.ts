@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
@@ -10,33 +10,7 @@ import { ApiService } from '../../core/services/api.service';
 import { noSpecialChars } from '../../shared/validators/no-special-chars.validator';
 import { generateSlug } from '../../shared/utils/slug';
 import { NewsForm, NewsItem } from './news.model';
-
-const MOCK_NEWS: NewsItem[] = [
-  {
-    id: 1,
-    title: 'Nova linha de ônibus interurbano conecta Maringá e Londrina',
-    description: 'A partir de maio, uma nova linha de transporte coletivo vai ligar as duas maiores cidades do norte do Paraná com horários ampliados.',
-    linkType: 'external',
-    linkUrl: 'https://exemplo.com/onibus-interurbano',
-    isActive: true,
-  },
-  {
-    id: 2,
-    title: 'Programa de vacinação ampliado para toda a região metropolitana',
-    description: 'Secretaria de Saúde anuncia ampliação da campanha de vacinação com novos postos em 12 municípios da região metropolitana de Curitiba.',
-    linkType: 'internal',
-    linkUrl: '/programa-de-vacinacao-ampliado-para-toda-a-regiao-metropolitana',
-    isActive: true,
-  },
-  {
-    id: 3,
-    title: 'Festival cultural de inverno cancelado por questões orçamentárias',
-    description: 'O festival que aconteceria em julho foi cancelado. A prefeitura informou que os recursos serão redirecionados para obras de infraestrutura.',
-    linkType: 'external',
-    linkUrl: 'https://exemplo.com/festival-cancelado',
-    isActive: false,
-  },
-];
+import { ToastService } from '../../shared/components/toast.service';
 
 @Component({
   selector: 'app-news-page',
@@ -44,13 +18,32 @@ const MOCK_NEWS: NewsItem[] = [
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField, EntityList, ConfirmDialog],
   templateUrl: './news.page.html',
 })
-export class NewsPage extends CrudPage<NewsForm> {
+export class NewsPage extends CrudPage<NewsForm> implements OnInit {
+  ngOnInit(): void {
+    this.fetchAll();
+  }
+
+  private fetchAll(): void {
+    this.loading.set(true);
+    this.api.getAll<NewsItem>('news').subscribe({
+      next: (items) => {
+        this.items.set(items);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.toast.show('Não foi possível carregar as notícias', 'error');
+      },
+    });
+  }
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   protected readonly linkType = signal<'external' | 'internal'>('external');
-  readonly items = signal<NewsItem[]>(MOCK_NEWS);
+  readonly items = signal<NewsItem[]>([]);
   readonly deletingItem = signal<NewsItem | null>(null);
+  readonly loading = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, noSpecialChars()]],
@@ -93,8 +86,17 @@ export class NewsPage extends CrudPage<NewsForm> {
   executeDelete(): void {
     const item = this.deletingItem();
     if (!item) return;
-    this.items.update((list) => list.filter((n) => n.id !== item.id));
-    this.deletingItem.set(null);
+
+    this.api.delete('news', item.id).subscribe({
+      next: () => {
+        this.items.update((list) => list.filter((n) => n.id !== item.id));
+        this.deletingItem.set(null);
+        this.toast.show('Notícia excluída com sucesso!', 'success');
+      },
+      error: () => {
+        this.toast.show('Não foi possível excluir a notícia', 'error');
+      },
+    });
   }
 
   get titleTouched(): boolean {
@@ -104,8 +106,7 @@ export class NewsPage extends CrudPage<NewsForm> {
   get titleError(): string {
     const ctrl = this.form.controls.title;
     if (ctrl.hasError('required')) return 'Título é obrigatório.';
-    if (ctrl.hasError('specialChars'))
-      return 'Título não pode conter caracteres especiais.';
+    if (ctrl.hasError('specialChars')) return 'Título não pode conter caracteres especiais.';
     return '';
   }
 
@@ -139,7 +140,10 @@ export class NewsPage extends CrudPage<NewsForm> {
 
   onSubmit(): void {
     if (this.linkType() === 'external') {
-      this.form.controls.linkUrl.setValidators([Validators.required, Validators.pattern(/^https:\/\//)]);
+      this.form.controls.linkUrl.setValidators([
+        Validators.required,
+        Validators.pattern(/^https:\/\//),
+      ]);
       this.form.controls.linkUrl.updateValueAndValidity();
     } else {
       this.form.controls.linkUrl.clearValidators();
@@ -156,24 +160,33 @@ export class NewsPage extends CrudPage<NewsForm> {
       raw.linkUrl = generateSlug(raw.title);
     }
 
+    const payload = { ...raw, type: 'geral' };
     const id = this.editingId();
+
     if (id) {
-      this.items.update((list) =>
-        list.map((n) => (n.id === id ? { ...n, ...raw } : n))
-      );
+      this.api.update<NewsItem>('news', id as number, payload).subscribe({
+        next: (updated) => {
+          this.items.update((list) => list.map((n) => (n.id === id ? updated : n)));
+          this.toast.show('Notícia atualizada com sucesso!', 'success');
+          this.editingId.set(null);
+          this.view.set('list');
+        },
+        error: () => {
+          this.toast.show('Não foi possível atualizar a notícia', 'error');
+        },
+      });
     } else {
-      this.api.create('news', raw).subscribe(() => {
-        this.view.set('list');
-      })
-      const newItem: NewsItem = { ...raw, id: Date.now() };
-      this.items.update((list) => [...list, newItem]);
+      this.api.create<NewsItem>('news', payload).subscribe({
+        next: (created) => {
+          this.items.update((list) => [...list, created]);
+          this.toast.show('Notícia criada com sucesso!', 'success');
+          this.editingId.set(null);
+          this.view.set('list');
+        },
+        error: () => {
+          this.toast.show('Não foi possível criar a notícia', 'error');
+        },
+      });
     }
-
-    this.editingId.set(null);
-    this.view.set('list');
-  }
-
-  protected generateSlugPreview(title: string): string {
-    return generateSlug(title);
   }
 }
