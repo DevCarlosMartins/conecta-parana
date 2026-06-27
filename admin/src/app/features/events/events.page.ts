@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
 import { FormContainer } from '../../shared/components/form-container';
 import { FormField } from '../../shared/components/form-field';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast.service';
 
 function futureDateValidator(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -16,11 +17,15 @@ interface EventsFormValues {
   title: string;
   type: string;
   description: string;
-  event_date: string;
-  category_id: string;
+  eventDate: string;
+  status: string;
   latitude: number | null;
   longitude: number | null;
-  local_id: string;
+  localId: number | null;
+}
+
+interface EventItem extends EventsFormValues {
+  id: number;
 }
 
 @Component({
@@ -29,12 +34,16 @@ interface EventsFormValues {
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField],
   templateUrl: './events.page.html',
 })
-export class EventsPage extends CrudPage<EventsFormValues> {
+export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
-  protected readonly photos = signal<File[]>([]);
-  protected readonly photoErrors = signal<string[]>([]);
+  readonly items   = signal<EventItem[]>([]);
+  readonly loading = signal(false);
+
+  readonly photos = signal<File[]>([]);
+  readonly photoErrors = signal<string[]>([]);
 
   readonly eventTypes = [
     { value: 'cultural', label: 'Cultural' },
@@ -45,28 +54,41 @@ export class EventsPage extends CrudPage<EventsFormValues> {
     { value: 'lazer', label: 'Lazer' },
   ];
 
+  readonly statusOptions = [
+    { value: 'ativo', label: 'Ativo' },
+    { value: 'agendado', label: 'Agendado' },
+    { value: 'encerrado', label: 'Encerrado' },
+  ];
+
   protected readonly form = this.fb.nonNullable.group({
-    title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
-    type: ['', Validators.required],
+    title:       ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
+    type:        ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
-    event_date: ['', futureDateValidator],
-    category_id: [''],
-    latitude: [null as number | null, [Validators.min(-90), Validators.max(90)]],
-    longitude: [null as number | null, [Validators.min(-180), Validators.max(180)]],
-    local_id: [''],
+    eventDate:   ['', [Validators.required, futureDateValidator]],
+    status:      ['agendado', Validators.required],
+    latitude:    [null as number | null, [Validators.min(-90), Validators.max(90)]],
+    longitude:   [null as number | null, [Validators.min(-180), Validators.max(180)]],
+    localId:     [null as number | null],
   });
 
   protected defaultFormValues(): EventsFormValues {
     return {
-      title: '',
-      type: '',
-      description: '',
-      event_date: '',
-      category_id: '',
-      latitude: null,
-      longitude: null,
-      local_id: '',
+      title: '', type: '', description: '',
+      eventDate: '', status: 'agendado',
+      latitude: null, longitude: null, localId: null,
     };
+  }
+
+  ngOnInit(): void {
+    this.loadEvents();
+  }
+
+  private loadEvents(): void {
+    this.loading.set(true);
+    this.api.getAll<EventItem>('events').subscribe({
+      next: (data) => { this.items.set(data); this.loading.set(false); },
+      error: () => { this.toast.show('Não foi possível carregar os eventos.', 'error'); this.loading.set(false); },
+    });
   }
 
   override openForm(): void {
@@ -75,87 +97,85 @@ export class EventsPage extends CrudPage<EventsFormValues> {
     this.photoErrors.set([]);
   }
 
+  openEditForm(item: EventItem): void {
+    this.editingId.set(item.id);
+    this.form.patchValue(item);
+    this.view.set('form');
+  }
+
+  onDelete(id: number): void {
+    if (!confirm('Deseja realmente excluir este evento?')) return;
+    this.api.delete('events', id).subscribe({
+      next: () => this.items.update(list => list.filter(e => e.id !== id)),
+      error: () => this.toast.show('Não foi possível excluir o evento.', 'error'),
+    });
+  }
+
   get titleTouched(): boolean { return this.form.controls.title.touched; }
   get titleError(): string {
-    const ctrl = this.form.controls.title;
-    if (ctrl.hasError('required')) return 'Título é obrigatório.';
-    if (ctrl.hasError('minlength')) return 'Título deve ter no mínimo 3 caracteres.';
-    if (ctrl.hasError('maxlength')) return 'Título deve ter no máximo 200 caracteres.';
+    const c = this.form.controls.title;
+    if (c.hasError('required')) return 'Título é obrigatório.';
+    if (c.hasError('minlength')) return 'Título deve ter no mínimo 3 caracteres.';
+    if (c.hasError('maxlength')) return 'Título deve ter no máximo 150 caracteres.';
     return '';
   }
 
   get typeTouched(): boolean { return this.form.controls.type.touched; }
   get typeError(): string {
-    const ctrl = this.form.controls.type;
-    if (ctrl.hasError('required')) return 'Tipo é obrigatório.';
-    return '';
+    return this.form.controls.type.hasError('required') ? 'Tipo é obrigatório.' : '';
   }
 
   get descriptionTouched(): boolean { return this.form.controls.description.touched; }
   get descriptionError(): string {
-    const ctrl = this.form.controls.description;
-    if (ctrl.hasError('required')) return 'Descrição é obrigatória.';
-    if (ctrl.hasError('minlength')) return 'Descrição deve ter no mínimo 10 caracteres.';
+    const c = this.form.controls.description;
+    if (c.hasError('required')) return 'Descrição é obrigatória.';
+    if (c.hasError('minlength')) return 'Descrição deve ter no mínimo 10 caracteres.';
     return '';
   }
 
-  get eventDateTouched(): boolean { return this.form.controls.event_date.touched; }
+  get eventDateTouched(): boolean { return this.form.controls.eventDate.touched; }
   get eventDateError(): string {
-    const ctrl = this.form.controls.event_date;
-    if (ctrl.hasError('pastDate')) return 'A data do evento deve ser futura.';
+    const c = this.form.controls.eventDate;
+    if (c.hasError('required')) return 'Data do evento é obrigatória.';
+    if (c.hasError('pastDate')) return 'A data do evento deve ser futura.';
     return '';
   }
 
   get latitudeTouched(): boolean { return this.form.controls.latitude.touched; }
   get latitudeError(): string {
-    const ctrl = this.form.controls.latitude;
-    if (ctrl.hasError('min') || ctrl.hasError('max')) return 'Latitude deve estar entre -90 e 90.';
-    return '';
+    const c = this.form.controls.latitude;
+    return (c.hasError('min') || c.hasError('max')) ? 'Latitude deve estar entre -90 e 90.' : '';
   }
 
   get longitudeTouched(): boolean { return this.form.controls.longitude.touched; }
   get longitudeError(): string {
-    const ctrl = this.form.controls.longitude;
-    if (ctrl.hasError('min') || ctrl.hasError('max')) return 'Longitude deve estar entre -180 e 180.';
-    return '';
+    const c = this.form.controls.longitude;
+    return (c.hasError('min') || c.hasError('max')) ? 'Longitude deve estar entre -180 e 180.' : '';
   }
 
   onPhotosSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files) {
-      this.processFiles(Array.from(input.files));
-    }
+    if (input.files) this.processFiles(Array.from(input.files));
   }
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-    if (event.dataTransfer?.files) {
-      this.processFiles(Array.from(event.dataTransfer.files));
-    }
+    if (event.dataTransfer?.files) this.processFiles(Array.from(event.dataTransfer.files));
   }
 
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-  }
+  onDragOver(event: DragEvent): void { event.preventDefault(); }
 
-  private processFiles(files: File[]): void {
+  processFiles(files: File[]): void {
     const errors: string[] = [];
     const valid: File[] = [];
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
     const maxSize = 5 * 1024 * 1024;
 
     for (const file of files) {
-      if (!allowed.includes(file.type)) {
-        errors.push(`${file.name}: formato inválido (use jpg, png ou webp).`);
-        continue;
-      }
-      if (file.size > maxSize) {
-        errors.push(`${file.name}: tamanho máximo é 5MB.`);
-        continue;
-      }
+      if (!allowed.includes(file.type)) { errors.push(`${file.name}: formato inválido.`); continue; }
+      if (file.size > maxSize) { errors.push(`${file.name}: tamanho máximo é 5MB.`); continue; }
       valid.push(file);
     }
-
     this.photos.update(prev => [...prev, ...valid]);
     this.photoErrors.set(errors);
   }
@@ -171,8 +191,43 @@ export class EventsPage extends CrudPage<EventsFormValues> {
     }
 
     const raw = this.form.getRawValue();
-    this.api.create('events', { ...raw, photos: this.photos() }).subscribe(() => {
-      this.view.set('list');
-    });
+    const payload: Record<string, unknown> = {
+      title: raw.title,
+      type: raw.type,
+      description: raw.description,
+      eventDate: raw.eventDate,
+      status: raw.status,
+    };
+
+    if (raw.latitude !== null && raw.longitude !== null) {
+      payload['coordinates'] = { lat: raw.latitude, lng: raw.longitude };
+    }
+
+    if (raw.localId !== null) {
+      payload['localId'] = raw.localId;
+    }
+
+    const id = this.editingId();
+    this.loading.set(true);
+
+    if (id) {
+      this.api.update<EventItem>('events', id as number, payload).subscribe({
+        next: (updated) => {
+          this.items.update(list => list.map(e => e.id === id ? updated : e));
+          this.loading.set(false);
+          this.view.set('list');
+        },
+        error: () => { this.toast.show('Não foi possível atualizar o evento.', 'error'); this.loading.set(false); },
+      });
+    } else {
+      this.api.create<EventItem>('events', payload).subscribe({
+        next: (created) => {
+          this.items.update(list => [...list, created]);
+          this.loading.set(false);
+          this.view.set('list');
+        },
+        error: () => { this.toast.show('Não foi possível criar o evento.', 'error'); this.loading.set(false); },
+      });
+    }
   }
 }

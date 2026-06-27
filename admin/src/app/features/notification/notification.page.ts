@@ -13,7 +13,7 @@ interface NotificationForm {
   eventId?: number;
   comunicadoId?: number;
 }
-
+1
 interface NotificationItem extends NotificationForm {
   id: number;
 }

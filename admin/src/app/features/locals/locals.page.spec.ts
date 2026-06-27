@@ -4,13 +4,20 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { LocalsPage } from './locals.page';
 import { ApiService } from '../../core/services/api.service';
-import { of } from 'rxjs';
+import { ToastService } from '../../shared/components/toast.service';
+import { of, throwError } from 'rxjs';
 
 describe('LocalsPage', () => {
   let fixture: ComponentFixture<LocalsPage>;
   let component: LocalsPage;
   let el: HTMLElement;
-  let apiSpy: { getAll: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+  let apiSpy: {
+    getAll: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
+  let toastSpy: { show: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     apiSpy = {
@@ -19,6 +26,7 @@ describe('LocalsPage', () => {
       create: vi.fn().mockReturnValue(of({ id: 1, name: 'Novo', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' })),
       update: vi.fn().mockReturnValue(of({ id: 1, name: 'Editado', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' })),
     };
+    toastSpy = { show: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [LocalsPage, RouterModule.forRoot([])],
@@ -26,6 +34,7 @@ describe('LocalsPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: ApiService, useValue: apiSpy },
+        { provide: ToastService, useValue: toastSpy },
       ],
     }).compileComponents();
 
@@ -76,12 +85,7 @@ describe('LocalsPage', () => {
   describe('defaultFormValues', () => {
     it('deve retornar valores padrão corretos', () => {
       expect(component['defaultFormValues']()).toEqual({
-        name: '',
-        phone: '',
-        description: '',
-        latitude: '',
-        longitude: '',
-        category: '',
+        name: '', phone: '', description: '', latitude: '', longitude: '', category: '',
       });
     });
   });
@@ -200,6 +204,16 @@ describe('LocalsPage', () => {
       component['deleteLocal'](1);
       expect(apiSpy.delete).not.toHaveBeenCalled();
     });
+
+    it('deve exibir toast de erro quando delete falha', () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      apiSpy.delete.mockReturnValue(throwError(() => new Error('erro')));
+      component['items'].set([{ id: 1, name: 'A', phone: '', description: '', latitude: '0', longitude: '0', category: 'Outro' }]);
+
+      component['deleteLocal'](1);
+
+      expect(toastSpy.show).toHaveBeenCalledWith('Não foi possível excluir o local. Tente novamente!');
+    });
   });
 
   describe('onSubmit', () => {
@@ -237,6 +251,17 @@ describe('LocalsPage', () => {
       component.onSubmit();
 
       expect(component['editingId']()).toBeNull();
+    });
+
+    it('deve exibir toast de erro quando create falha', () => {
+      apiSpy.create.mockReturnValue(throwError(() => new Error('erro')));
+      component.openForm();
+      component['form'].patchValue({ name: 'Parque', latitude: '-23', longitude: '-51', category: 'Parque' });
+      component['form'].controls.photos.setValue({} as FileList);
+
+      component.onSubmit();
+
+      expect(toastSpy.show).toHaveBeenCalledWith('Não foi possível criar o local. Tente novamente!');
     });
   });
 

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal} from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
@@ -6,6 +6,7 @@ import { FormContainer } from '../../shared/components/form-container';
 import { FormField } from '../../shared/components/form-field';
 import { LocalForm, LocalItem } from './locals.model';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast.service';
 
 @Component({
   selector: 'app-locals-page',
@@ -13,14 +14,13 @@ import { ApiService } from '../../core/services/api.service';
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField],
   templateUrl: './locals.page.html',
 })
-
 export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly api = inject(ApiService);
+  private readonly fb    = inject(FormBuilder);
+  private readonly api   = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   readonly items   = signal<LocalItem[]>([]);
   readonly loading = signal(false);
-  readonly error   = signal<string | null>(null);
 
   protected readonly categories = [
     'Restaurante', 'Hotel', 'Ponto Turístico', 'Parque',
@@ -38,13 +38,14 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
   });
 
   protected defaultFormValues(): LocalForm {
-    return { 
-      name: '', 
-      phone: '', 
-      description: '', 
-      latitude: '', 
-      longitude: '', 
-      category: ''};
+    return {
+      name:        '',
+      phone:       '',
+      description: '',
+      latitude:    '',
+      longitude:   '',
+      category:    '',
+    };
   }
 
   ngOnInit(): void {
@@ -53,17 +54,16 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
 
   private loadLocals(): void {
     this.loading.set(true);
-    this.error.set(null);
     this.api.getAll<LocalItem>('locals').subscribe({
       next: (data) => {
         this.items.set(data);
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Não foi possível carregar os local. Tente novamente!');
+        this.toast.show('Não foi possível carregar os locais. Tente novamente!');
         this.loading.set(false);
-      }
-    })
+      },
+    });
   }
 
   protected openEdit(local: LocalItem): void {
@@ -98,10 +98,9 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
         this.items.update((list) => list.filter((l) => l.id !== id));
       },
       error: () => {
-        this.error.set('Não foi possível excluir o local. Tente Novamente!');
+        this.toast.show('Não foi possível excluir o local. Tente novamente!');
       },
     });
-  
   }
 
   onSubmit(): void {
@@ -111,21 +110,19 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
     }
 
     const raw = this.form.getRawValue();
-    const id = this.editingId();
+    const id  = this.editingId();
     this.loading.set(true);
 
     const formData = new FormData();
-    formData.append('name', raw.name);
-    formData.append('phone', raw.phone);
+    formData.append('name',        raw.name);
+    formData.append('phone',       raw.phone);
     formData.append('description', raw.description);
-    formData.append('latitude', raw.latitude);
-    formData.append('longitude', raw.longitude);
-    formData.append('category', raw.category);
- 
+    formData.append('latitude',    raw.latitude);
+    formData.append('longitude',   raw.longitude);
+    formData.append('category',    raw.category);
+
     if (raw.photos) {
-      Array.from(raw.photos).forEach((file) => {
-        formData.append('photos', file);
-      });
+      Array.from(raw.photos).forEach((file) => formData.append('photos', file));
     }
 
     if (id) {
@@ -138,7 +135,7 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
           this.view.set('list');
         },
         error: () => {
-          this.error.set('Não foi possível atualizar o local. Tente novamente!');
+          this.toast.show('Não foi possível atualizar o local. Tente novamente!');
           this.loading.set(false);
         },
       });
@@ -152,7 +149,7 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
           this.view.set('list');
         },
         error: () => {
-          this.error.set('Não foi possível criar o local. Tente novamente.');
+          this.toast.show('Não foi possível criar o local. Tente novamente!');
           this.loading.set(false);
         },
       });
@@ -166,19 +163,18 @@ export class LocalsPage extends CrudPage<LocalForm> implements OnInit {
 
   onPhotosChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if(input.files?.length) this.form.controls.photos.setValue(input.files);
+    if (input.files?.length) this.form.controls.photos.setValue(input.files);
   }
 
+  get nameTouched():      boolean { return this.form.controls.name.touched; }
+  get latitudeTouched():  boolean { return this.form.controls.latitude.touched; }
+  get longitudeTouched(): boolean { return this.form.controls.longitude.touched; }
+  get categoryTouched():  boolean { return this.form.controls.category.touched; }
+  get photosTouched():    boolean { return this.form.controls.photos.touched; }
 
-  get nameTouched()      { return this.form.controls.name.touched; }
-  get latitudeTouched()  { return this.form.controls.latitude.touched; }
-  get longitudeTouched() { return this.form.controls.longitude.touched; }
-  get categoryTouched()  { return this.form.controls.category.touched; }
-  get photosTouched()    { return this.form.controls.photos.touched; }
-
-  get nameError():      string { return this.form.controls.name.hasError('required')      ? 'Nome é obrigatório.'        : ''; }
-  get latitudeError():  string { return this.form.controls.latitude.hasError('required')  ? 'Latitude é obrigatória.'    : ''; }
-  get longitudeError(): string { return this.form.controls.longitude.hasError('required') ? 'Longitude é obrigatória.'   : ''; }
-  get categoryError():  string { return this.form.controls.category.hasError('required')  ? 'Categoria é obrigatória.'   : ''; }
+  get nameError():      string { return this.form.controls.name.hasError('required')      ? 'Nome é obrigatório.'         : ''; }
+  get latitudeError():  string { return this.form.controls.latitude.hasError('required')  ? 'Latitude é obrigatória.'     : ''; }
+  get longitudeError(): string { return this.form.controls.longitude.hasError('required') ? 'Longitude é obrigatória.'    : ''; }
+  get categoryError():  string { return this.form.controls.category.hasError('required')  ? 'Categoria é obrigatória.'    : ''; }
   get photosError():    string { return this.form.controls.photos.hasError('required')    ? 'Adicione ao menos uma foto.' : ''; }
 }
