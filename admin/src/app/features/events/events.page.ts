@@ -145,7 +145,7 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
   get latitudeError(): string {
     const c = this.form.controls.latitude;
     return (c.hasError('min') || c.hasError('max')) ? 'Latitude deve estar entre -90 e 90.' : '';
-  }
+  } 
 
   get longitudeTouched(): boolean { return this.form.controls.longitude.touched; }
   get longitudeError(): string {
@@ -197,6 +197,7 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
       description: raw.description,
       eventDate: raw.eventDate,
       status: raw.status,
+      cityId: 1,
     };
 
     if (raw.latitude !== null && raw.longitude !== null) {
