@@ -34,6 +34,7 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    required int cityId,
   }) async {
     if (_isLoading) return false;
 
@@ -41,7 +42,12 @@ class AuthProvider extends ChangeNotifier {
     clearMessages();
 
     try {
-      await _authService.register(name: name, email: email, password: password);
+      await _authService.register(
+        name: name,
+        email: email,
+        password: password,
+        cityId: cityId,
+      );
 
       _successMessage = 'Conta criada com sucesso. Faça login para continuar.';
       return true;
