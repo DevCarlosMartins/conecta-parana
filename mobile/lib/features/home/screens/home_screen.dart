@@ -1,8 +1,10 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:conectaparana/features/home/data/home_mock_data.dart';
+import 'package:conectaparana/providers/home_content_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:conectaparana/shared/widgets/app_header.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -25,7 +27,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoading = true;
   bool _showUrgentNotice = true;
 
   int _currentEventIndex = 0;
@@ -42,34 +43,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _simulateLoading();
-  }
 
-  Future<void> _simulateLoading() async {
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeContentProvider>().loadHomeContent();
     });
   }
 
-  Future<void> _refreshHome() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
+  Future<void> _refreshHome() {
+    return context.read<HomeContentProvider>().loadHomeContent(
+      forceRefresh: true,
+    );
   }
 
-  Widget _buildUrgentNotice() {
+  Widget _buildUrgentNotice(HomeComunicadoMock comunicado) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? _darkCard : Colors.white;
     final textColor = isDark ? Colors.white : _gray;
@@ -102,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'COMUNICADO URGENTE!\nCratera se abre em cruzamento entre Av. Paraná e Av. Horácio Raccanello.',
+              '${comunicado.title}\n${comunicado.description}',
               style: GoogleFonts.montserrat(
                 color: textColor,
                 fontSize: 12,
@@ -197,15 +183,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEventsCarousel() {
-    if (homeEventsMock.isEmpty) {
+  Widget _buildEventsCarousel(List<HomeEventMock> events) {
+    if (events.isEmpty) {
       return _buildEmptyState('Nenhum evento disponível no momento.');
     }
 
     return CarouselSlider.builder(
-      itemCount: homeEventsMock.length,
+      itemCount: events.length,
       itemBuilder: (context, index, realIndex) {
-        final event = homeEventsMock[index];
+        final event = events[index];
 
         return _buildEventCard(event);
       },
@@ -213,10 +199,10 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 220,
         viewportFraction: 0.78,
         enlargeCenterPage: true,
-        enableInfiniteScroll: homeEventsMock.length > 1,
+        enableInfiniteScroll: events.length > 1,
         onPageChanged: (index, reason) {
           setState(() {
-            _currentEventIndex = index % homeEventsMock.length;
+            _currentEventIndex = index % events.length;
           });
         },
       ),
@@ -273,26 +259,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNewsCarousel() {
-    if (homeNewsMock.isEmpty) {
+  Widget _buildNewsCarousel(List<HomeNewsMock> news) {
+    if (news.isEmpty) {
       return _buildEmptyState('Nenhuma notícia disponível no momento.');
     }
 
     return CarouselSlider.builder(
-      itemCount: homeNewsMock.length,
+      itemCount: news.length,
       itemBuilder: (context, index, realIndex) {
-        final news = homeNewsMock[index];
+        final item = news[index];
 
-        return _buildNewsCard(news);
+        return _buildNewsCard(item);
       },
       options: CarouselOptions(
         height: 230,
         viewportFraction: 0.78,
         enlargeCenterPage: true,
-        enableInfiniteScroll: homeNewsMock.length > 1,
+        enableInfiniteScroll: news.length > 1,
         onPageChanged: (index, reason) {
           setState(() {
-            _currentNewsIndex = index % homeNewsMock.length;
+            _currentNewsIndex = index % news.length;
           });
         },
       ),
@@ -363,7 +349,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(HomeContentProvider homeContentProvider) {
+    final events = homeContentProvider.events.isNotEmpty
+        ? homeContentProvider.events
+        : homeEventsMock;
+
+    final news = homeContentProvider.news.isNotEmpty
+        ? homeContentProvider.news
+        : homeNewsMock;
+
+    final comunicados = homeContentProvider.comunicados.isNotEmpty
+        ? homeContentProvider.comunicados
+        : homeComunicadosMock;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -376,13 +374,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (!widget.cityAvailable) ...[
           const SizedBox(height: 120),
-
           _buildEmptyState(
             'No momento, o Conecta Paraná está disponível apenas para Maringá.',
           ),
-
           const SizedBox(height: 24),
-
           Text(
             '${widget.cityName} estará disponível em breve.',
             textAlign: TextAlign.center,
@@ -393,23 +388,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ] else ...[
-          if (_showUrgentNotice) _buildUrgentNotice(),
+          if (homeContentProvider.errorMessage != null)
+            _buildBackendWarning(homeContentProvider.errorMessage!),
+
+          if (_showUrgentNotice && comunicados.isNotEmpty)
+            _buildUrgentNotice(comunicados.first),
 
           _buildSectionTitle('Principais eventos'),
 
-          _buildEventsCarousel(),
+          _buildEventsCarousel(events),
 
           _buildCarouselDots(
-            itemCount: homeEventsMock.length,
+            itemCount: events.length,
             currentIndex: _currentEventIndex,
           ),
 
           _buildSectionTitle('Últimas notícias'),
 
-          _buildNewsCarousel(),
+          _buildNewsCarousel(news),
 
           _buildCarouselDots(
-            itemCount: homeNewsMock.length,
+            itemCount: news.length,
             currentIndex: _currentNewsIndex,
           ),
 
@@ -444,6 +443,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildBackendWarning(String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : const Color(0xFFFFF7E6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0A100)),
+      ),
+      child: Text(
+        '$message Mostrando dados de exemplo.',
+        style: GoogleFonts.montserrat(
+          color: isDark ? Colors.white70 : _gray,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -451,14 +473,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: isDark ? _darkBackground : Colors.white,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshHome,
-          color: _teal,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: _isLoading ? _buildLoadingSkeleton() : _buildContent(),
-          ),
+        child: Consumer<HomeContentProvider>(
+          builder: (context, homeContentProvider, _) {
+            return RefreshIndicator(
+              onRefresh: _refreshHome,
+              color: _teal,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: homeContentProvider.isLoading
+                    ? _buildLoadingSkeleton()
+                    : _buildContent(homeContentProvider),
+              ),
+            );
+          },
         ),
       ),
     );
