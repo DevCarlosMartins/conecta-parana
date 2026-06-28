@@ -73,12 +73,18 @@ class AuthProvider extends ChangeNotifier {
 
       _isAuthenticated = true;
       _isGuest = false;
+      _successMessage = 'Login realizado com sucesso.';
+
       return true;
     } on AuthException catch (e) {
       _errorMessage = e.message;
+      _isAuthenticated = false;
+
       return false;
     } catch (_) {
-      _errorMessage = 'E-mail ou senha inválidos.';
+      _errorMessage = 'Não foi possível fazer login.';
+      _isAuthenticated = false;
+
       return false;
     } finally {
       _setLoading(false);
