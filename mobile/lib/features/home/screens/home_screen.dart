@@ -31,7 +31,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoading = true;
   bool _showUrgentNotice = true;
 
   int _currentEventIndex = 0;
@@ -90,23 +89,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted) return;
 
-    setState(() {
-      _isLoading = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeContentProvider>().loadHomeContent();
     });
   }
 
-  Future<void> _refreshHome() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
+  Future<void> _refreshHome() {
+    return context.read<HomeContentProvider>().loadHomeContent(
+      forceRefresh: true,
+    );
   }
 
   Widget _buildEmptyState(String message) {
@@ -153,8 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEventsCarousel() {
-    if (homeEventsMock.isEmpty) {
+  Widget _buildEventsCarousel(List<HomeEventMock> events) {
+    if (events.isEmpty) {
       return _buildEmptyState('Nenhum evento disponível no momento.');
     }
 
@@ -187,8 +178,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNewsCarousel() {
-    if (homeNewsMock.isEmpty) {
+  Widget _buildNewsCarousel(List<HomeNewsMock> news) {
+    if (news.isEmpty) {
       return _buildEmptyState('Nenhuma notícia disponível no momento.');
     }
 
@@ -225,7 +216,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(HomeContentProvider homeContentProvider) {
+    final events = homeContentProvider.events.isNotEmpty
+        ? homeContentProvider.events
+        : homeEventsMock;
+
+    final news = homeContentProvider.news.isNotEmpty
+        ? homeContentProvider.news
+        : homeNewsMock;
+
+    final comunicados = homeContentProvider.comunicados.isNotEmpty
+        ? homeContentProvider.comunicados
+        : homeComunicadosMock;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -265,13 +268,13 @@ class _HomeScreenState extends State<HomeScreen> {
           const HomeSectionTitle(title: 'Principais eventos'),
           _buildEventsCarousel(),
           _buildCarouselDots(
-            itemCount: homeEventsMock.length,
+            itemCount: events.length,
             currentIndex: _currentEventIndex,
           ),
           const HomeSectionTitle(title: 'Últimas notícias'),
           _buildNewsCarousel(),
           _buildCarouselDots(
-            itemCount: homeNewsMock.length,
+            itemCount: news.length,
             currentIndex: _currentNewsIndex,
           ),
           const SizedBox(height: 24),
@@ -305,6 +308,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildBackendWarning(String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : const Color(0xFFFFF7E6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0A100)),
+      ),
+      child: Text(
+        '$message Mostrando dados de exemplo.',
+        style: GoogleFonts.montserrat(
+          color: isDark ? Colors.white70 : _gray,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -312,14 +338,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: isDark ? _darkBackground : Colors.white,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshHome,
-          color: _teal,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: _isLoading ? _buildLoadingSkeleton() : _buildContent(),
-          ),
+        child: Consumer<HomeContentProvider>(
+          builder: (context, homeContentProvider, _) {
+            return RefreshIndicator(
+              onRefresh: _refreshHome,
+              color: _teal,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: homeContentProvider.isLoading
+                    ? _buildLoadingSkeleton()
+                    : _buildContent(homeContentProvider),
+              ),
+            );
+          },
         ),
       ),
     );

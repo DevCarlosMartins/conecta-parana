@@ -1,7 +1,8 @@
 import {
+  ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ListNewsQueryDto } from './dto/list-news-query.dto';
@@ -79,9 +80,22 @@ export class NewsService {
       );
     }
 
-    return this.prisma.client.news.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.client.news.delete({
+        where: { id },
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new ConflictException(
+          'Não é possível deletar a notícia, pois existem dados vinculados a ela',
+        );
+      }
+
+      throw error;
+    }
   }
 
   private assertAdminCityId(

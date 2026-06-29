@@ -15,7 +15,6 @@ if (glitchtipDsn) {
   Sentry.init({
     dsn: glitchtipDsn,
     environment: process.env.NODE_ENV || 'development',
-    // GlitchTip não suporta tracing - manter desabilitado
     tracesSampleRate: 0,
   });
 }
@@ -26,13 +25,6 @@ async function bootstrap(): Promise<void> {
   });
 
   app.useLogger(app.get(Logger));
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
-  );
 
   app.use(helmet());
 
@@ -62,8 +54,6 @@ async function bootstrap(): Promise<void> {
       }
     },
   });
-
-  // Filter global de exceções enviadas para o GlitchTip
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new SentryExceptionFilter(httpAdapter));
 

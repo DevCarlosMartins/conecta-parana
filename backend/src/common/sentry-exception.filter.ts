@@ -18,13 +18,10 @@ export class SentryExceptionFilter extends BaseExceptionFilter {
   }
 
   private shouldReportToSentry(exception: unknown): boolean {
-    // Só reportar erros 5xx e crashes inesperados
-    // Erros 4xx (400, 401, 403, 404) são esperados - não são bugs
     if (exception instanceof HttpException) {
       return exception.getStatus() >= 500;
     }
 
-    // Qualquer erro não-HttpException é inesperado - sempre reportar
     return true;
   }
 }

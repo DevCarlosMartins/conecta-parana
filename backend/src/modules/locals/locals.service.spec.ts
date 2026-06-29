@@ -60,7 +60,6 @@ describe('LocalsService', () => {
     mockPrisma.client.$queryRaw.mockResolvedValue([]);
   });
 
-  // --------------------- // findAll // ---------------------
   describe('findAll', () => {
     it('sem filtros, busca com where vazio', async () => {
       mockPrisma.client.local.findMany.mockResolvedValue([]);
@@ -111,7 +110,6 @@ describe('LocalsService', () => {
     });
   });
 
-  // --------------------- // findOne // ---------------------
   describe('findOne', () => {
     it('retorna o local com coordinates quando existe', async () => {
       mockPrisma.client.local.findUnique.mockResolvedValue({
@@ -155,7 +153,6 @@ describe('LocalsService', () => {
     });
   });
 
-  // --------------------- // create // ---------------------
   describe('create', () => {
     it('cria injetando cityId/userId e grava coordinates', async () => {
       mockPrisma.client.category.findUnique.mockResolvedValue({
@@ -228,7 +225,6 @@ describe('LocalsService', () => {
     });
   });
 
-  // --------------------- // update // ---------------------
   describe('update', () => {
     it('admin da mesma cidade atualiza sem coordinates', async () => {
       mockPrisma.client.local.findUnique.mockResolvedValue({
@@ -303,13 +299,12 @@ describe('LocalsService', () => {
     });
   });
 
-  // --------------------- // remove // ---------------------
   describe('remove', () => {
     it('admin da mesma cidade remove sem dependências', async () => {
       mockPrisma.client.local.findUnique.mockResolvedValue({
         ...baseLocal,
         cityId: 10,
-        _count: { events: 0 },
+        _count: { events: 0, photos: 0 },
       });
       mockPrisma.client.local.delete.mockResolvedValue({ ...baseLocal });
 
@@ -325,7 +320,7 @@ describe('LocalsService', () => {
       mockPrisma.client.local.findUnique.mockResolvedValue({
         ...baseLocal,
         cityId: 10,
-        _count: { events: 3 },
+        _count: { events: 3, photos: 0 },
       });
 
       await expect(service.remove(1, 10)).rejects.toThrow(ConflictException);
@@ -336,7 +331,7 @@ describe('LocalsService', () => {
       mockPrisma.client.local.findUnique.mockResolvedValue({
         ...baseLocal,
         cityId: 99,
-        _count: { events: 0 },
+        _count: { events: 0, photos: 0 },
       });
 
       await expect(service.remove(1, 10)).rejects.toThrow(ForbiddenException);
