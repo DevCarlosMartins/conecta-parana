@@ -70,9 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-
                   const SizedBox(height: 22),
-
                   Row(
                     children: [
                       const Icon(
@@ -91,9 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 22),
-
                   _buildThemeOption(
                     icon: Icons.light_mode_outlined,
                     title: 'Modo claro',
@@ -105,9 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.pop(bottomSheetContext);
                     },
                   ),
-
                   const SizedBox(height: 12),
-
                   _buildThemeOption(
                     icon: Icons.dark_mode_outlined,
                     title: 'Modo escuro',
@@ -208,7 +202,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final displayCityName = widget.cityName.trim().isNotEmpty
                 ? widget.cityName
                 : profile.cityName;
-
             return LayoutBuilder(
               builder: (context, constraints) {
                 return RefreshIndicator(
@@ -233,39 +226,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onSearchTap: widget.onSearchTap,
                               onNotificationTap: widget.onNotificationTap,
                             ),
-
                             const SizedBox(height: 20),
-
                             if (profileProvider.isLoading)
                               const LinearProgressIndicator(
                                 color: _teal,
                                 minHeight: 3,
                               ),
-
                             if (profileProvider.errorMessage != null)
                               _buildProfileWarning(
                                 profileProvider.errorMessage!,
                                 isDark,
                               ),
-
                             const SizedBox(height: 24),
-
                             _buildAvatar(isDark),
-
                             const SizedBox(height: 22),
-
                             _buildInfoFields(profile, displayCityName, isDark),
-
                             const SizedBox(height: 26),
-
                             _buildOptions(isDark),
-
                             const SizedBox(height: 28),
-
                             _buildEditButton(),
-
                             const SizedBox(height: 14),
-
                             _buildLogoutButton(),
                           ],
                         ),
@@ -328,9 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Icon(Icons.person, color: _teal, size: 54),
           ),
         ),
-
         const SizedBox(height: 10),
-
         Text(
           'Perfil do usuário',
           style: GoogleFonts.montserrat(
@@ -356,18 +334,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: Icons.person_outline,
           isDark: isDark,
         ),
-
         const SizedBox(height: 16),
-
         _buildReadOnlyField(
           label: 'E-mail:',
           value: profile.email,
           icon: Icons.email_outlined,
           isDark: isDark,
         ),
-
         const SizedBox(height: 16),
-
         _buildReadOnlyField(
           label: 'Cidade atual:',
           value: displayCityName,
@@ -398,9 +372,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-
         const SizedBox(height: 6),
-
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -419,9 +391,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Row(
             children: [
               Icon(icon, color: _teal, size: 20),
-
               const SizedBox(width: 10),
-
               Expanded(
                 child: Text(
                   value,
@@ -451,9 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           subtitle: 'Eventos e locais salvos',
           onTap: _showFavoritesPlaceholder,
         ),
-
         const SizedBox(height: 12),
-
         _buildOptionCard(
           isDark: isDark,
           icon: Icons.settings_outlined,
@@ -501,9 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Icon(icon, color: _teal, size: 21),
             ),
-
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,9 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-
                   const SizedBox(height: 3),
-
                   Text(
                     subtitle,
                     style: GoogleFonts.montserrat(
@@ -530,7 +494,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-
             const Icon(Icons.chevron_right, color: _teal, size: 22),
           ],
         ),
@@ -625,9 +588,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Row(
           children: [
             Icon(icon, color: _teal, size: 24),
-
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -640,9 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-
                   const SizedBox(height: 3),
-
                   Text(
                     subtitle,
                     style: GoogleFonts.montserrat(
@@ -654,7 +613,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-
             if (isSelected)
               const Icon(Icons.check_circle, color: _green, size: 22),
           ],
