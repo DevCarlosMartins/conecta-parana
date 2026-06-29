@@ -1,3 +1,4 @@
+import 'package:conectaparana/features/map/screens/map_screen.dart';
 import 'package:conectaparana/providers/auth_provider.dart';
 import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
@@ -191,8 +192,7 @@ class _MainShellState extends State<MainShell> {
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
       ),
-      _ShellPlaceholderPage(
-        title: 'Mapa',
+      MapScreen(
         cityName: _selectedCity,
         cityAvailable: cityAvailable,
         onCityTap: _openCitySelector,
