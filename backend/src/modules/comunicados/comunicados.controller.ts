@@ -32,14 +32,20 @@ export class ComunicadosController {
 
   @Get()
   @ApiOperation({ summary: 'Lista comunicados (público filtros opcionais)' })
-  @ApiResponse({ status: 200, description: 'lista retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de comunicados retornada com sucesso',
+  })
   async findAll(@Query() dto: ListComunicadosQueryDto) {
     return this.comunicadosService.findAll(dto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Busca detalhes de um comunicado (público)' })
-  @ApiResponse({ status: 200, description: 'Lista retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Comunicado retornado com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Comunicado não encontrado' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.comunicadosService.findOne(id);
@@ -49,10 +55,14 @@ export class ComunicadosController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Crie um comunicado' })
+  @ApiOperation({ summary: 'Cria um comunicado (ADMIN)' })
   @ApiResponse({ status: 201, description: 'Comunicado criado' })
   @ApiResponse({ status: 400, description: 'Body inválido' })
-  @ApiResponse({ status: 401, description: 'Sem token' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso restrito a administradores',
+  })
   async create(@Body() dto: CreateComunicadosDto) {
     return this.comunicadosService.create(dto);
   }
@@ -61,9 +71,14 @@ export class ComunicadosController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Atualiza Comunicado' })
+  @ApiOperation({ summary: 'Atualiza um Comunicado (ADMIN)' })
   @ApiResponse({ status: 200, description: 'Comunicado atualizado' })
-  @ApiResponse({ status: 401, description: 'Sem token' })
+  @ApiResponse({ status: 400, description: 'Body inválido' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso restrito a administradores',
+  })
   @ApiResponse({ status: 404, description: 'Comunicado não encontrado' })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -75,10 +90,14 @@ export class ComunicadosController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Deleta Comunicados' })
-  @ApiResponse({ status: 200, description: 'Comunicado Deletado' })
-  @ApiResponse({ status: 401, description: 'Sem token' })
-  @ApiResponse({ status: 404, description: 'Comunicado Não Encontrado' })
+  @ApiOperation({ summary: 'Remove um comunicado (ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Comunicado removido com sucesso' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso restrito a administradores',
+  })
+  @ApiResponse({ status: 404, description: 'Comunicado não encontrado' })
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.comunicadosService.remove(id);
   }

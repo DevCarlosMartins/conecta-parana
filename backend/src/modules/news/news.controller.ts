@@ -37,7 +37,10 @@ export class NewsController {
   @ApiOperation({
     summary: 'Lista notícias publicamente com filtros opcionais',
   })
-  @ApiResponse({ status: 200, description: 'Lista retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de notícias retornada',
+  })
   async findAll(@Query() dto: ListNewsQueryDto) {
     return this.newsService.findAll(dto);
   }
@@ -57,10 +60,10 @@ export class NewsController {
   @ApiOperation({ summary: 'Cria notícia (ADMIN da cidade)' })
   @ApiResponse({ status: 201, description: 'Notícia criada' })
   @ApiResponse({ status: 400, description: 'Body inválido' })
-  @ApiResponse({ status: 401, description: 'Sem token' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Admin sem cidade ou sem permissão',
+    description: 'Acesso restrito a administradores',
   })
   async create(@Body() dto: CreateNewsDto, @Request() req: ExpressRequest) {
     const user = req['user'] as JwtPayload;
@@ -71,10 +74,14 @@ export class NewsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Atualiza notícia (ADMIN da cidade)' })
+  @ApiOperation({ summary: 'Atualiza uma notícia (ADMIN da cidade)' })
   @ApiResponse({ status: 200, description: 'Notícia atualizada' })
-  @ApiResponse({ status: 401, description: 'Sem token' })
-  @ApiResponse({ status: 403, description: 'Admin de outra cidade' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado: notícia pertence a outra cidade',
+  })
   @ApiResponse({ status: 404, description: 'Notícia não encontrada' })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -89,10 +96,13 @@ export class NewsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Deleta notícia (ADMIN da cidade)' })
-  @ApiResponse({ status: 200, description: 'Notícia deletada' })
-  @ApiResponse({ status: 401, description: 'Sem token' })
-  @ApiResponse({ status: 403, description: 'Admin de outra cidade' })
+  @ApiOperation({ summary: 'Remove uma notícia (ADMIN da cidade)' })
+  @ApiResponse({ status: 200, description: 'Notícia removida com sucesso' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado: notícia pertence a outra cidade',
+  })
   @ApiResponse({ status: 404, description: 'Notícia não encontrada' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
