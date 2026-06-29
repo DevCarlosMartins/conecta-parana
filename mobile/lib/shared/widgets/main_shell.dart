@@ -210,6 +210,7 @@ class _MainShellState extends State<MainShell> {
       ProfileScreen(
         cityName: _selectedCity,
         onCityTap: _openCitySelector,
+        onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
       ),
     ];
