@@ -22,7 +22,6 @@ class NewsCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: isDark ? _darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -39,17 +38,17 @@ class NewsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
-            imagePath,
-            height: 135,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return const SizedBox(
-                height: 135,
-                child: Center(child: Icon(Icons.image_not_supported_outlined)),
-              );
-            },
+          Expanded(
+            child: Image.asset(
+              imagePath,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Center(
+                  child: Icon(Icons.image_not_supported_outlined),
+                );
+              },
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),

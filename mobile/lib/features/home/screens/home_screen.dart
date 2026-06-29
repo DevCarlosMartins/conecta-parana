@@ -1,12 +1,14 @@
+import 'dart:async';
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:conectaparana/features/home/data/home_mock_data.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:conectaparana/features/home/widgets/event_card.dart';
 import 'package:conectaparana/features/home/widgets/home_section_title.dart';
 import 'package:conectaparana/features/home/widgets/news_card.dart';
 import 'package:conectaparana/features/home/widgets/urgent_notice_card.dart';
+import 'package:conectaparana/shared/widgets/app_header.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -35,6 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentEventIndex = 0;
   int _currentNewsIndex = 0;
 
+  final CarouselSliderController _eventsCarouselController =
+      CarouselSliderController();
+  final CarouselSliderController _newsCarouselController =
+      CarouselSliderController();
+
+  Timer? _carouselAutoPlayTimer;
+
   static const Color _teal = Color(0xFF146E77);
   static const Color _gray = Color(0xFF444444);
   static const Color _lightBackground = Color(0xFFEDEEFF);
@@ -45,6 +54,35 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _simulateLoading();
+    _startSyncedCarouselAutoPlay();
+  }
+
+  @override
+  void dispose() {
+    _carouselAutoPlayTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startSyncedCarouselAutoPlay() {
+    _carouselAutoPlayTimer?.cancel();
+
+    _carouselAutoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || _isLoading || !widget.cityAvailable) return;
+
+      if (homeEventsMock.length > 1) {
+        _eventsCarouselController.nextPage(
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      if (homeNewsMock.length > 1) {
+        _newsCarouselController.nextPage(
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   Future<void> _simulateLoading() async {
@@ -120,23 +158,31 @@ class _HomeScreenState extends State<HomeScreen> {
       return _buildEmptyState('Nenhum evento disponível no momento.');
     }
 
-    return CarouselSlider.builder(
-      itemCount: homeEventsMock.length,
-      itemBuilder: (context, index, realIndex) {
-        final event = homeEventsMock[index];
+    return ClipRect(
+      child: CarouselSlider.builder(
+        carouselController: _eventsCarouselController,
+        itemCount: homeEventsMock.length,
+        itemBuilder: (context, index, realIndex) {
+          final event = homeEventsMock[index];
 
-        return EventCard(title: event.title, imagePath: event.imagePath);
-      },
-      options: CarouselOptions(
-        height: 220,
-        viewportFraction: 0.78,
-        enlargeCenterPage: true,
-        enableInfiniteScroll: homeEventsMock.length > 1,
-        onPageChanged: (index, reason) {
-          setState(() {
-            _currentEventIndex = index % homeEventsMock.length;
-          });
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: EventCard(title: event.title, imagePath: event.imagePath),
+          );
         },
+        options: CarouselOptions(
+          height: 220,
+          viewportFraction: 0.78,
+          enlargeCenterPage: true,
+          enlargeStrategy: CenterPageEnlargeStrategy.height,
+          enableInfiniteScroll: homeEventsMock.length > 1,
+          autoPlay: false,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentEventIndex = index % homeEventsMock.length;
+            });
+          },
+        ),
       ),
     );
   }
@@ -146,27 +192,35 @@ class _HomeScreenState extends State<HomeScreen> {
       return _buildEmptyState('Nenhuma notícia disponível no momento.');
     }
 
-    return CarouselSlider.builder(
-      itemCount: homeNewsMock.length,
-      itemBuilder: (context, index, realIndex) {
-        final news = homeNewsMock[index];
+    return ClipRect(
+      child: CarouselSlider.builder(
+        carouselController: _newsCarouselController,
+        itemCount: homeNewsMock.length,
+        itemBuilder: (context, index, realIndex) {
+          final news = homeNewsMock[index];
 
-        return NewsCard(
-          title: news.title,
-          description: news.description,
-          imagePath: news.imagePath,
-        );
-      },
-      options: CarouselOptions(
-        height: 250,
-        viewportFraction: 0.78,
-        enlargeCenterPage: true,
-        enableInfiniteScroll: homeNewsMock.length > 1,
-        onPageChanged: (index, reason) {
-          setState(() {
-            _currentNewsIndex = index % homeNewsMock.length;
-          });
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: NewsCard(
+              title: news.title,
+              description: news.description,
+              imagePath: news.imagePath,
+            ),
+          );
         },
+        options: CarouselOptions(
+          height: 250,
+          viewportFraction: 0.78,
+          enlargeCenterPage: true,
+          enlargeStrategy: CenterPageEnlargeStrategy.height,
+          enableInfiniteScroll: homeNewsMock.length > 1,
+          autoPlay: false,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentNewsIndex = index % homeNewsMock.length;
+            });
+          },
+        ),
       ),
     );
   }
@@ -182,15 +236,14 @@ class _HomeScreenState extends State<HomeScreen> {
           onNotificationTap: widget.onNotificationTap,
         ),
 
+        if (widget.cityAvailable) SizedBox(height: _showUrgentNotice ? 12 : 48),
+
         if (!widget.cityAvailable) ...[
           const SizedBox(height: 120),
-
           _buildEmptyState(
             'No momento, o Conecta Paraná está disponível apenas para Maringá.',
           ),
-
           const SizedBox(height: 24),
-
           Text(
             '${widget.cityName} estará disponível em breve.',
             textAlign: TextAlign.center,
@@ -209,25 +262,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ),
-
           const HomeSectionTitle(title: 'Principais eventos'),
-
           _buildEventsCarousel(),
-
           _buildCarouselDots(
             itemCount: homeEventsMock.length,
             currentIndex: _currentEventIndex,
           ),
-
           const HomeSectionTitle(title: 'Últimas notícias'),
-
           _buildNewsCarousel(),
-
           _buildCarouselDots(
             itemCount: homeNewsMock.length,
             currentIndex: _currentNewsIndex,
           ),
-
           const SizedBox(height: 24),
         ],
       ],

@@ -7,7 +7,7 @@ class EventCard extends StatelessWidget {
   final String title;
   final String imagePath;
 
-  static const Color _blue = Color(0xFF264CA9);
+  static const Color _teal = Color(0xFF146E77);
   static const Color _gray = Color(0xFF444444);
   static const Color _darkCard = Color(0xFF1E1E1E);
 
@@ -16,11 +16,10 @@ class EventCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: isDark ? _darkCard : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _blue),
+        border: Border.all(color: _teal),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.12),
