@@ -61,3 +61,18 @@ const homeNewsMock = [
         'Fiorino acumulou autuações em 13 anos e tinha restrição judicial ativa.',
   ),
 ];
+
+class HomeComunicadoMock {
+  const HomeComunicadoMock({required this.title, required this.description});
+
+  final String title;
+  final String description;
+}
+
+const homeComunicadosMock = [
+  HomeComunicadoMock(
+    title: 'COMUNICADO URGENTE!',
+    description:
+        'Cratera se abre em cruzamento entre Av. Paraná e Av. Horácio Raccanello.',
+  ),
+];

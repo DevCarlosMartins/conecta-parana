@@ -1,4 +1,6 @@
+import 'package:conectaparana/features/cities/data/city_model.dart';
 import 'package:conectaparana/providers/auth_provider.dart';
+import 'package:conectaparana/providers/cities_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +21,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  CityModel? _selectedCity;
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _hasTriedSubmit = false;
@@ -29,6 +33,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const Color _gray = Color(0xFF595959);
   static const Color _darkBackground = Color(0xFF121212);
   static const Color _darkCard = Color(0xFF1E1E1E);
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final citiesProvider = context.read<CitiesProvider>();
+
+      await citiesProvider.loadCities();
+
+      if (!mounted) return;
+
+      setState(() {
+        _selectedCity = citiesProvider.defaultCity;
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -104,6 +125,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    final citiesProvider = context.read<CitiesProvider>();
+    final selectedCity = _selectedCity ?? citiesProvider.defaultCity;
+
+    if (selectedCity == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível carregar a cidade padrão. Verifique se o backend está rodando.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -114,6 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: name,
       email: email,
       password: password,
+      cityId: selectedCity.id,
     );
 
     if (!mounted) return;
@@ -224,6 +260,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultCityField() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final citiesProvider = context.watch<CitiesProvider>();
+
+    final fillColor = isDark ? _darkCard : Colors.white;
+    final textColor = isDark ? Colors.white : _gray;
+
+    if (citiesProvider.isLoading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: fillColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _teal, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _teal,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Carregando cidade...',
+              style: GoogleFonts.montserrat(
+                color: textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final city = _selectedCity ?? citiesProvider.defaultCity;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: fillColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _teal, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.location_city_outlined,
+            color: _teal,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              city?.displayName ?? 'Maringá - PR',
+              style: GoogleFonts.montserrat(
+                color: textColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Text(
+            'Cidade inicial',
+            style: GoogleFonts.montserrat(
+              color: _teal,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -343,7 +460,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _emailController,
                   hintText: 'E-mail',
                   validator: _validateEmail,
+                  keyboardType: TextInputType.emailAddress,
                 ),
+
+                const SizedBox(height: 18),
+
+                _buildLabel('Cidade inicial:'),
+
+                const SizedBox(height: 6),
+
+                _buildDefaultCityField(),
 
                 const SizedBox(height: 18),
 
