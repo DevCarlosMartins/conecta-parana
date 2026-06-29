@@ -47,17 +47,17 @@ export class LocalsService {
   }
 
   async create(dto: CreateLocalDto, cityId: number | null, userId: number) {
-    this.assertCity(cityId);
+    const resolvedCityId = this.resolveCityId(cityId, dto.cityId);
     await this.assertCategoryExists(dto.categoryId);
 
     const local = await this.prisma.client.local.create({
       data: {
-        name: dto.name,
+        name:        dto.name,
         description: dto.description,
-        address: dto.address,
-        phone: dto.phone,
-        cityId,
-        categoryId: dto.categoryId,
+        address:     dto.address,
+        phone:       dto.phone,
+        cityId:      resolvedCityId,
+        categoryId:  dto.categoryId,
         userId,
       },
     });
@@ -70,23 +70,23 @@ export class LocalsService {
   }
 
   async update(id: number, dto: UpdateLocalDto, cityId: number | null) {
-    this.assertCity(cityId);
-
     const local = await this.prisma.client.local.findUnique({ where: { id } });
     if (!local) throw new NotFoundException(`Local ${id} não encontrado`);
 
-    if (local.cityId !== cityId) {
-      throw new ForbiddenException('Você só pode editar locais da sua cidade');
+    
+    if (cityId !== null && cityId !== undefined) {
+      if (local.cityId !== cityId) {
+        throw new ForbiddenException('Você só pode editar locais da sua cidade');
+      }
     }
+
     if (dto.categoryId !== undefined) {
       await this.assertCategoryExists(dto.categoryId);
     }
 
     const { coordinates, ...scalarFields } = dto;
-    await this.prisma.client.local.update({
-      where: { id },
-      data: scalarFields,
-    });
+    await this.prisma.client.local.update({ where: { id }, data: scalarFields });
+
     if (coordinates !== undefined) {
       await this.writeCoordinates(id, coordinates);
     }
@@ -95,19 +95,18 @@ export class LocalsService {
   }
 
   async remove(id: number, cityId: number | null) {
-    this.assertCity(cityId);
-
     const local = await this.prisma.client.local.findUnique({
       where: { id },
       include: { _count: { select: { events: true, photos: true } } },
     });
 
-    if (!local) {
-      throw new NotFoundException(`Local ${id} não encontrado`);
-    }
+    if (!local) throw new NotFoundException(`Local ${id} não encontrado`);
 
-    if (local.cityId !== cityId) {
-      throw new ForbiddenException('Você só pode excluir locais da sua cidade');
+
+    if (cityId !== null && cityId !== undefined) {
+      if (local.cityId !== cityId) {
+        throw new ForbiddenException('Você só pode excluir locais da sua cidade');
+      }
     }
 
     if (local._count.events > 0 || local._count.photos > 0) {
@@ -117,16 +116,15 @@ export class LocalsService {
     }
 
     await this.prisma.client.local.delete({ where: { id } });
-
     return { id, deleted: true };
   }
 
-  private assertCity(cityId: number | null): asserts cityId is number {
-    if (cityId === null || cityId === undefined) {
-      throw new ForbiddenException(
-        'Admin sem cidade associada ou token desatualizado, refaça login',
-      );
-    }
+  private resolveCityId(tokenCityId: number | null, dtoCityId: number | undefined): number {
+    if (tokenCityId !== null && tokenCityId !== undefined) return tokenCityId;
+    if (dtoCityId !== undefined) return dtoCityId;
+    throw new ForbiddenException(
+      'Superadmin deve informar cityId no body para criar locais',
+    );
   }
 
   private async assertCategoryExists(categoryId: number): Promise<void> {

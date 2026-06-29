@@ -30,6 +30,18 @@ import { CreateNotificationsDto } from './dto/create-notifications.dto';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  @Get('all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lista todas as notificações criadas (ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Notificações retornadas' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
+  @ApiResponse({ status: 403, description: 'Sem permissão' })
+  async findAllAdmin() {
+    return this.notificationsService.findAllAdmin();
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

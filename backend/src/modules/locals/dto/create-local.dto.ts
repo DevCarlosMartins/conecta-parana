@@ -12,39 +12,37 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CoordinatesDto } from './coordinates.dto';
 
 export class CreateLocalDto {
-  @ApiProperty({
-    example: 'Catedral Basílica Menor',
-    minLength: 2,
-    maxLength: 200,
-  })
-  @IsString({ message: 'Nome deve ser um texto' })
-  @Length(2, 200, { message: 'Nome deve ter entre 2 e 200 caracteres' })
+  @ApiProperty({ example: 'Catedral Basílica Menor' })
+  @IsString()
+  @Length(2, 200)
   name!: string;
 
-  @ApiProperty({
-    example: 'Principal igreja de Maringá, com 124 m de altura.',
-  })
-  @IsString({ message: 'Descrição deve ser um texto' })
-  @MinLength(5, { message: 'Descrição deve ter pelo menos 5 caracteres' })
+  @ApiProperty({ example: 'Principal igreja de Maringá.' })
+  @IsString()
+  @MinLength(5)
   description!: string;
 
   @ApiProperty({ example: 'Praça da Catedral, s/n - Centro' })
-  @IsString({ message: 'Endereço deve ser um texto' })
-  @MinLength(5, { message: 'Endereço deve ter pelo menos 5 caracteres' })
+  @IsString()
+  @MinLength(5)
   address!: string;
 
   @ApiProperty({ example: '(44) 3226-1166' })
-  @IsString({ message: 'Telefone deve ser um texto' })
+  @IsString()
   phone!: string;
 
-  @ApiProperty({
-    example: 1,
-    description: 'ID de uma categoria existente (ver GET /categories)',
-  })
+  @ApiProperty({ example: 1 })
   @Type(() => Number)
-  @IsInt({ message: 'Categoria deve ser um número inteiro' })
-  @Min(1, { message: 'Categoria deve ser maior que zero' })
+  @IsInt()
+  @Min(1)
   categoryId!: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  cityId?: number;
 
   @ApiPropertyOptional({ type: CoordinatesDto })
   @IsOptional()

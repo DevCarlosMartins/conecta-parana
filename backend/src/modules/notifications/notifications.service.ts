@@ -76,6 +76,22 @@ export class NotificationsService {
     });
   }
 
+  async findAllAdmin() {
+    const notifications = await this.prisma.client.notification.findMany({
+      orderBy: { id: 'desc' },
+      distinct: ['title', 'description'],
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        eventId: true,
+        comunicadoId: true,
+        isRead: true,
+      },
+    });
+    return notifications;
+  }
+
   async remove(id: number, userId: number) {
     const notification = await this.prisma.client.notification.findUnique({
       where: { id },
