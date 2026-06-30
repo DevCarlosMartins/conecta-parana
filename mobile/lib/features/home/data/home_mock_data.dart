@@ -49,7 +49,7 @@ const homeNewsMock = [
         'Nick e Tuco foram resgatados feridos e hoje convivem com os servidores.',
   ),
   HomeNewsMock(
-    title: 'Paraná Junino abre a o calendário de festas de graça no estado',
+    title: 'Paraná Junino abre o calendário de festas de graça no estado',
     imagePath: 'assets/images/parana_junino.png',
     description:
         'Evento do Sesc e da RPC tem comidas típicas e atrações para a família.',
