@@ -19,6 +19,9 @@ class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   String _selectedCity = 'Maringá';
 
+  String? _eventTitleToOpen;
+  int _eventOpenRequestId = 0;
+
   static const Color _teal = Color(0xFF146E77);
   static const Color _gray = Color(0xFF5A5A5A);
   static const Color _lightBackground = Color(0xFFEDEEFF);
@@ -174,6 +177,14 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
+  void _openEventDetailsFromAnotherScreen(String eventTitle) {
+    setState(() {
+      _currentIndex = 3;
+      _eventTitleToOpen = eventTitle;
+      _eventOpenRequestId++;
+    });
+  }
+
   List<Widget> _buildPages() {
     final cityAvailable = _selectedCity == 'Maringá';
 
@@ -184,6 +195,7 @@ class _MainShellState extends State<MainShell> {
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
+        onEventTap: _openEventDetailsFromAnotherScreen,
       ),
       NewsScreen(
         cityName: _selectedCity,
@@ -197,6 +209,7 @@ class _MainShellState extends State<MainShell> {
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
+        onEventTap: _openEventDetailsFromAnotherScreen,
       ),
       EventsScreen(
         cityName: _selectedCity,
@@ -204,6 +217,8 @@ class _MainShellState extends State<MainShell> {
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
+        eventTitleToOpen: _eventTitleToOpen,
+        eventOpenRequestId: _eventOpenRequestId,
       ),
       _ShellPlaceholderPage(
         title: 'Perfil',

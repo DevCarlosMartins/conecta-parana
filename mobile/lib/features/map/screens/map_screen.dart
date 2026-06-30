@@ -14,6 +14,7 @@ class MapScreen extends StatefulWidget {
     required this.onCityTap,
     required this.onSearchTap,
     required this.onNotificationTap,
+    required this.onEventTap,
   });
 
   final String cityName;
@@ -21,6 +22,7 @@ class MapScreen extends StatefulWidget {
   final VoidCallback onCityTap;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final void Function(String eventTitle) onEventTap;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -358,7 +360,7 @@ class _MapScreenState extends State<MapScreen> {
                 const SizedBox(height: 8),
 
                 Wrap(
-                  spacing: 24,
+                  spacing: 14,
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
@@ -380,6 +382,43 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         ),
                       ],
+                    ),
+
+                    InkWell(
+                      onTap: () => widget.onEventTap(point.title),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _teal.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: _teal.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: _teal,
+                              size: 15,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Mais informações',
+                              style: GoogleFonts.montserrat(
+                                color: _teal,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
 
                     InkWell(
