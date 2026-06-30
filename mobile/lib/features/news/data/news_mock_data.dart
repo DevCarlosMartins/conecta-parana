@@ -14,6 +14,32 @@ class NewsMock {
   final String imagePath;
   final String publicationInfo;
   final String sourceUrl;
+
+  factory NewsMock.fromJson(Map<String, dynamic> json) {
+    return NewsMock(
+      title: _readString(json, ['title']),
+      description: _readString(json, ['description', 'summary']),
+      imagePath: _readString(json, ['imagePath', 'imageUrl', 'image']),
+      publicationInfo: _readString(json, [
+        'publicationInfo',
+        'publishedAt',
+        'date',
+      ]),
+      sourceUrl: _readString(json, ['sourceUrl', 'url', 'link']),
+    );
+  }
+
+  static String _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+
+      if (value is String && value.trim().isNotEmpty) {
+        return value;
+      }
+    }
+
+    return '';
+  }
 }
 
 final newsMock = [

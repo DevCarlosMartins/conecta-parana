@@ -1,4 +1,5 @@
 import 'package:conectaparana/features/news/data/news_mock_data.dart';
+import 'package:conectaparana/services/news_service.dart';
 import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -63,24 +64,26 @@ class NewsScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              if (newsMock.isEmpty)
-                _buildEmptyState(context)
-              else
-                ListView.separated(
-                  itemCount: newsMock.length,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  separatorBuilder: (_, _) => const SizedBox(height: 20),
-                  itemBuilder: (context, index) {
-                    final news = newsMock[index];
+              FutureBuilder<List<NewsMock>>(
+                future: _loadNews(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return _buildLoadingState(context);
+                  }
 
-                    return _NewsListCard(
-                      news: news,
-                      onTap: () => _showNewsDetails(context, news),
-                      onMoreInfoTap: () => _openNewsLink(context, news),
-                    );
-                  },
-                ),
+                  if (snapshot.hasError) {
+                    return _buildErrorState(context);
+                  }
+
+                  final newsList = snapshot.data ?? [];
+
+                  if (newsList.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+
+                  return _buildNewsList(context, newsList);
+                },
+              ),
             ],
           ),
         ),
@@ -277,6 +280,63 @@ class NewsScreen extends StatelessWidget {
     }
 
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<List<NewsMock>> _loadNews() {
+    return NewsService().getNews();
+  }
+
+  Widget _buildNewsList(BuildContext context, List<NewsMock> newsList) {
+    return ListView.separated(
+      itemCount: newsList.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      separatorBuilder: (_, _) => const SizedBox(height: 20),
+      itemBuilder: (context, index) {
+        final news = newsList[index];
+
+        return _NewsListCard(
+          news: news,
+          onTap: () => _showNewsDetails(context, news),
+          onMoreInfoTap: () => _showNewsDetails(context, news),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : _lightBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Center(child: CircularProgressIndicator(color: _teal)),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : _lightBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        'Não foi possível carregar as notícias.',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.montserrat(
+          color: isDark ? Colors.white : _gray,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }
 
