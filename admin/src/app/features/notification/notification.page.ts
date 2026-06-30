@@ -13,7 +13,7 @@ interface NotificationForm {
   eventId?: number;
   comunicadoId?: number;
 }
-1
+
 interface NotificationItem extends NotificationForm {
   id: number;
 }
@@ -50,7 +50,7 @@ export class NotificationComponent extends CrudPage<NotificationForm> implements
 
   private loadNotifications(): void {
     this.loading.set(true);
-    this.api.getAll<NotificationItem>('notifications').subscribe({
+    this.api.getAll<NotificationItem>('notifications/all').subscribe({
       next: (data) => {
         this.items.set(data);
         this.loading.set(false);
