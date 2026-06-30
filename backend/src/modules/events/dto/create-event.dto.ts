@@ -107,4 +107,14 @@ export class CreateEventDto {
   @ValidateNested()
   @Type(() => EventCoordinatesDto)
   coordinates?: EventCoordinatesDto;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID da cidade (obrigatório apenas para super admin sem cidade associada)',
+  })
+  @IsOptional()
+  @Transform(toNumber)
+  @IsInt({ message: 'Cidade deve ser um número inteiro' })
+  @Min(1, { message: 'Cidade deve ser maior que zero' })
+  cityId?: number;
 }

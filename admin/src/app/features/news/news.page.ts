@@ -55,12 +55,13 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
 
   protected defaultFormValues(): NewsForm {
     return {
-      title: '',
-      description: '',
-      linkType: 'external',
-      linkUrl: '',
-      isActive: true,
-    };
+  title: '',
+  description: '',
+  linkType: 'external',
+  linkUrl: '',
+  isActive: true,
+  type: '',
+};
   }
 
   override openForm(): void {

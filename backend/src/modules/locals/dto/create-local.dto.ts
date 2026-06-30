@@ -45,14 +45,18 @@ export class CreateLocalDto {
   @IsString({ message: 'Telefone deve ser um texto' })
   phone!: string;
 
-  @ApiProperty({
-    example: 1,
-    description: 'ID de uma categoria existente (ver GET /categories)',
-  })
+  @ApiProperty({ example: 1 })
   @Type(() => Number)
-  @IsInt({ message: 'Categoria deve ser um número inteiro' })
-  @Min(1, { message: 'Categoria deve ser maior que zero' })
+  @IsInt()
+  @Min(1)
   categoryId!: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  cityId?: number;
 
   @ApiPropertyOptional({ type: CoordinatesDto })
   @IsOptional()

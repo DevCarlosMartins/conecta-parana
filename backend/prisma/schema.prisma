@@ -180,6 +180,7 @@ model Comunicado {
   id          Int     @id @default(autoincrement())
   title       String
   description String
+  category    String @default("comunicado")
   isActive    Boolean @map("is_active")
 
   favorites     Favorite[]

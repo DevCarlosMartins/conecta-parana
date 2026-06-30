@@ -17,6 +17,7 @@ import { CitiesModule } from './modules/cities/cities.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { EventsModule } from './modules/events/events.module';
 import { ComunicadosModule } from './modules/comunicados/comunicados.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ComunicadosModule } from './modules/comunicados/comunicados.module';
     NotificationsModule,
     EventsModule,
     ComunicadosModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [
