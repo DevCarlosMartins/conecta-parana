@@ -192,8 +192,7 @@ class _MainShellState extends State<MainShell> {
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
       ),
-      _ShellPlaceholderPage(
-        title: 'Mapa',
+      MapScreen(
         cityName: _selectedCity,
         cityAvailable: cityAvailable,
         onCityTap: _openCitySelector,
