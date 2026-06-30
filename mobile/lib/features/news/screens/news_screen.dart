@@ -113,132 +113,97 @@ class NewsScreen extends StatelessWidget {
   }
 
   void _showNewsDetails(BuildContext context, NewsMock news) {
-    showDialog<void>(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) {
-        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
-
-        final dialogColor = isDark ? _darkCard : Colors.white;
-        final textColor = isDark ? Colors.white : _gray;
-        final descriptionColor = isDark ? Colors.white70 : _gray;
-
-        return Dialog(
-          backgroundColor: dialogColor,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 24,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(dialogContext).size.height * 0.82,
-              maxWidth: 420,
-            ),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.72,
+          minChildSize: 0.45,
+          maxChildSize: 0.90,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? _darkCard : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            news.title,
-                            style: GoogleFonts.montserrat(
-                              color: _teal,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          icon: Icon(
-                            Icons.close,
-                            color: isDark ? Colors.white70 : _gray,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 180,
-                        child: Image.asset(
-                          news.imagePath,
-                          fit: BoxFit.cover,
-                          alignment: const Alignment(0, -0.8),
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: double.infinity,
-                              height: 180,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF2A2A2A)
-                                    : _lightBackground,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: _teal),
-                              ),
-                              child: const Icon(
-                                Icons.image_not_supported_outlined,
-                                color: _teal,
-                                size: 42,
-                              ),
-                            );
-                          },
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black26,
+                          borderRadius: BorderRadius.circular(999),
                         ),
                       ),
                     ),
 
                     const SizedBox(height: 18),
 
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset(
+                        news.imagePath,
+                        width: double.infinity,
+                        height: 190,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: double.infinity,
+                            height: 190,
+                            color: isDark ? Colors.black26 : _lightBackground,
+                            child: const Icon(
+                              Icons.image_not_supported_outlined,
+                              color: _teal,
+                              size: 42,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
                     Text(
-                      'Publicação',
+                      news.title,
                       style: GoogleFonts.montserrat(
-                        color: _teal,
-                        fontSize: 13,
+                        color: isDark ? Colors.white : _gray,
+                        fontSize: 20,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
 
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 10),
 
                     Text(
                       news.publicationInfo,
                       style: GoogleFonts.montserrat(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    Text(
-                      'Descrição',
-                      style: GoogleFonts.montserrat(
                         color: _teal,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 14),
 
                     Text(
                       news.description,
                       style: GoogleFonts.montserrat(
-                        color: descriptionColor,
+                        color: isDark ? Colors.white70 : _gray,
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
                         height: 1.45,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
@@ -246,20 +211,21 @@ class NewsScreen extends StatelessWidget {
 
                     SizedBox(
                       width: double.infinity,
+                      height: 48,
                       child: ElevatedButton(
-                        onPressed: () => _openNewsLink(dialogContext, news),
+                        onPressed: () =>
+                            _openNewsLink(bottomSheetContext, news),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _teal,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(999),
                           ),
                         ),
                         child: Text(
                           'Abrir notícia completa',
                           style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -269,20 +235,20 @@ class NewsScreen extends StatelessWidget {
 
                     SizedBox(
                       width: double.infinity,
+                      height: 48,
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(dialogContext),
+                        onPressed: () => Navigator.pop(bottomSheetContext),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: _teal,
                           side: const BorderSide(color: _teal),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(999),
                           ),
                         ),
                         child: Text(
                           'Fechar',
                           style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -290,8 +256,8 @@ class NewsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
