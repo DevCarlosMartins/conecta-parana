@@ -154,7 +154,7 @@ export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
       return;
     }
 
-    this.api.delete('comunicado', id).subscribe({
+    this.api.delete('comunicados', id).subscribe({
       next: () => {
         this.posts.update((list) => list.filter((post) => post.id !== id));
       },
