@@ -37,7 +37,7 @@ export class AuthService {
         email,
         password: hashed,
         cityId: dto.cityId,
-        ...(dto.role && { role: dto.role}),
+        ...(dto.role && { role: dto.role }),
       },
     });
 

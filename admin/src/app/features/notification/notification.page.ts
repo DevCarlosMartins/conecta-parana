@@ -92,18 +92,18 @@ export class NotificationComponent extends CrudPage<NotificationForm> implements
     const values = this.form.getRawValue();
     this.loading.set(true);
 
-    this.api.create<NotificationItem>('notifications', values).subscribe({
-      next: (created) => {
-        this.items.update((list) => [...list, created]);
-        this.loading.set(false);
-        this.editingId.set(null);
-        this.form.reset();
-        this.view.set('list');
-      },
-      error: () => {
-        this.toast.show('Não foi possível enviar a notificação. Tente novamente.');
-        this.loading.set(false);
-      },
-    });
+    this.api.create<NotificationItem[]>('notifications', values).subscribe({
+  next: () => {
+    this.loading.set(false);
+    this.editingId.set(null);
+    this.form.reset();
+    this.view.set('list');
+    this.loadNotifications();
+  },
+  error: () => {
+    this.toast.show('Não foi possível enviar a notificação. Tente novamente.');
+    this.loading.set(false);
+  },
+});
   }
 }

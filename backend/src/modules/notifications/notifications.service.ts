@@ -38,15 +38,19 @@ export class NotificationsService {
       select: { id: true },
     });
 
-    return this.prisma.client.notification.createMany({
-      data: users.map((user) => ({
-        title: dto.title,
-        description: dto.description,
-        userId: user.id,
-        eventId: dto.eventId,
-        comunicadoId: dto.comunicadoId,
-      })),
-    });
+    return this.prisma.client.$transaction(
+      users.map((user) =>
+        this.prisma.client.notification.create({
+          data: {
+            title: dto.title,
+            description: dto.description,
+            userId: user.id,
+            eventId: dto.eventId,
+            comunicadoId: dto.comunicadoId,
+          },
+        }),
+      ),
+    );
   }
 
   async getUnreadCount(userId: number) {

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
@@ -12,15 +12,30 @@ import { generateSlug } from '../../shared/utils/slug';
 import { NewsForm, NewsItem } from './news.model';
 import { ToastService } from '../../shared/components/toast.service';
 
-
 @Component({
   selector: 'app-news-page',
   standalone: true,
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField, EntityList, ConfirmDialog],
   templateUrl: './news.page.html',
 })
-
 export class NewsPage extends CrudPage<NewsForm> implements OnInit {
+  ngOnInit(): void {
+    this.fetchAll();
+  }
+
+  private fetchAll(): void {
+    this.loading.set(true);
+    this.api.getAll<NewsItem>('news').subscribe({
+      next: (items) => {
+        this.items.set(items);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.toast.show('Não foi possível carregar as notícias', 'error');
+      },
+    });
+  }
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
@@ -29,12 +44,10 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
   readonly items = signal<NewsItem[]>([]);
   readonly deletingItem = signal<NewsItem | null>(null);
   readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, noSpecialChars()]],
     description: ['', Validators.required],
-    type: ['', Validators.required],
     linkType: ['external' as 'internal' | 'external'],
     linkUrl: [''],
     isActive: [true],
@@ -42,31 +55,13 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
 
   protected defaultFormValues(): NewsForm {
     return {
-      title: '',
-      description: '',
-      type: '',
-      linkType: 'external',
-      linkUrl: '',
-      isActive: true,
-    };
-  }
-
-  ngOnInit(): void {
-    this.loadNews();
-  }
-
-  private loadNews(): void{
-    this.loading.set(true);
-    this.api.getAll<NewsItem>('news').subscribe({
-      next: (data) => {
-        this.items.set(data);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.toast.show('Não foi possível carregaras notícias. Tente novamente!');
-        this.loading.set(false);
-      },
-    });
+  title: '',
+  description: '',
+  linkType: 'external',
+  linkUrl: '',
+  isActive: true,
+  type: '',
+};
   }
 
   override openForm(): void {
@@ -97,10 +92,10 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
       next: () => {
         this.items.update((list) => list.filter((n) => n.id !== item.id));
         this.deletingItem.set(null);
+        this.toast.show('Notícia excluída com sucesso!', 'success');
       },
       error: () => {
-        this.toast.show('Não foi possivel excluir a notícia. Tente novamente!');
-        this.deletingItem.set(null);
+        this.toast.show('Não foi possível excluir a notícia', 'error');
       },
     });
   }
@@ -112,8 +107,7 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
   get titleError(): string {
     const ctrl = this.form.controls.title;
     if (ctrl.hasError('required')) return 'Título é obrigatório.';
-    if (ctrl.hasError('specialChars'))
-      return 'Título não pode conter caracteres especiais.';
+    if (ctrl.hasError('specialChars')) return 'Título não pode conter caracteres especiais.';
     return '';
   }
 
@@ -147,7 +141,10 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
 
   onSubmit(): void {
     if (this.linkType() === 'external') {
-      this.form.controls.linkUrl.setValidators([Validators.required, Validators.pattern(/^https:\/\//)]);
+      this.form.controls.linkUrl.setValidators([
+        Validators.required,
+        Validators.pattern(/^https:\/\//),
+      ]);
       this.form.controls.linkUrl.updateValueAndValidity();
     } else {
       this.form.controls.linkUrl.clearValidators();
@@ -164,39 +161,33 @@ export class NewsPage extends CrudPage<NewsForm> implements OnInit {
       raw.linkUrl = generateSlug(raw.title);
     }
 
+    const payload = { ...raw, type: 'geral' };
     const id = this.editingId();
-    this.loading.set(true);
 
     if (id) {
-      this.api.update<NewsItem>('news', id as number, raw).subscribe({
+      this.api.update<NewsItem>('news', id as number, payload).subscribe({
         next: (updated) => {
           this.items.update((list) => list.map((n) => (n.id === id ? updated : n)));
-          this.loading.set(false);
+          this.toast.show('Notícia atualizada com sucesso!', 'success');
           this.editingId.set(null);
           this.view.set('list');
         },
         error: () => {
-          this.toast.show('Não foi possivel atualizar a notícia. Tente novamente!');
-          this.loading.set(false);
-        }
-      }) 
+          this.toast.show('Não foi possível atualizar a notícia', 'error');
+        },
+      });
     } else {
-      this.api.create<NewsItem>('news', raw).subscribe({
+      this.api.create<NewsItem>('news', payload).subscribe({
         next: (created) => {
           this.items.update((list) => [...list, created]);
-          this.loading.set(false);
+          this.toast.show('Notícia criada com sucesso!', 'success');
           this.editingId.set(null);
           this.view.set('list');
         },
         error: () => {
-          this.toast.show('Não foi possivel criar a notícia. Tente novamente!');
-          this.loading.set(false);
+          this.toast.show('Não foi possível criar a notícia', 'error');
         },
       });
     }
-  }
-
-  protected generateSlugPreview(title: string): string {
-    return generateSlug(title);
   }
 }
