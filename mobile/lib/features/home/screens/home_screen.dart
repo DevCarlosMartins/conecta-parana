@@ -20,6 +20,8 @@ class HomeScreen extends StatefulWidget {
     required this.onCityTap,
     required this.onSearchTap,
     required this.onNotificationTap,
+    required this.onEventTap,
+    required this.onNewsTap,
   });
 
   final String cityName;
@@ -27,6 +29,8 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onCityTap;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final void Function(String eventTitle) onEventTap;
+  final void Function(String newsTitle) onNewsTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -176,7 +180,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: EventCard(title: event.title, imagePath: event.imagePath),
+            child: EventCard(
+              title: event.title,
+              imagePath: event.imagePath,
+              onTap: () => widget.onEventTap(event.title),
+            ),
           );
         },
         options: CarouselOptions(
@@ -214,6 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: newsItem.title,
               description: newsItem.description,
               imagePath: newsItem.imagePath,
+              onTap: () => widget.onNewsTap(newsItem.title),
             ),
           );
         },

@@ -11,6 +11,8 @@ class EventsScreen extends StatefulWidget {
     required this.onCityTap,
     required this.onSearchTap,
     required this.onNotificationTap,
+    this.eventTitleToOpen,
+    this.eventOpenRequestId = 0,
   });
 
   final String cityName;
@@ -18,6 +20,8 @@ class EventsScreen extends StatefulWidget {
   final VoidCallback onCityTap;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final String? eventTitleToOpen;
+  final int eventOpenRequestId;
 
   @override
   State<EventsScreen> createState() => _EventsScreenState();
@@ -25,6 +29,7 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   bool _isLoading = true;
+  int _lastHandledEventOpenRequestId = 0;
 
   static const Color _blue = Color(0xFF264CA9);
   static const Color _green = Color(0xFF029144);
@@ -40,6 +45,17 @@ class _EventsScreenState extends State<EventsScreen> {
     _simulateLoading();
   }
 
+  @override
+  void didUpdateWidget(covariant EventsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.eventOpenRequestId != oldWidget.eventOpenRequestId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openRequestedEventDetails();
+      });
+    }
+  }
+
   Future<void> _simulateLoading() async {
     await Future.delayed(const Duration(seconds: 1));
 
@@ -47,6 +63,10 @@ class _EventsScreenState extends State<EventsScreen> {
 
     setState(() {
       _isLoading = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openRequestedEventDetails();
     });
   }
 
@@ -62,6 +82,46 @@ class _EventsScreenState extends State<EventsScreen> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  void _openRequestedEventDetails() {
+    if (!mounted) return;
+    if (_isLoading) return;
+    if (!widget.cityAvailable) return;
+    if (widget.eventTitleToOpen == null) return;
+    if (_lastHandledEventOpenRequestId == widget.eventOpenRequestId) return;
+
+    final event = _findEventByTitle(widget.eventTitleToOpen!);
+
+    if (event == null) return;
+
+    _lastHandledEventOpenRequestId = widget.eventOpenRequestId;
+    _showEventDetails(event);
+  }
+
+  EventMock? _findEventByTitle(String title) {
+    final normalizedTitle = _normalizeEventTitle(title);
+
+    for (final event in eventsMock) {
+      final normalizedEventTitle = _normalizeEventTitle(event.title);
+
+      if (normalizedEventTitle == normalizedTitle ||
+          normalizedTitle.contains(normalizedEventTitle) ||
+          normalizedEventTitle.contains(normalizedTitle)) {
+        return event;
+      }
+    }
+
+    return null;
+  }
+
+  String _normalizeEventTitle(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll('2026', '')
+        .replaceAll('de maringá', '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   Widget _buildGradientTitle() {
@@ -424,6 +484,8 @@ class _EventsScreenState extends State<EventsScreen> {
     required String value,
     required Color textColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,7 +493,7 @@ class _EventsScreenState extends State<EventsScreen> {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: _lightBackground,
+            color: isDark ? const Color(0xFF103B40) : _lightBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _teal),
           ),
