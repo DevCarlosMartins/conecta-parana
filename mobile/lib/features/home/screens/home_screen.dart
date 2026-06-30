@@ -6,9 +6,11 @@ import 'package:conectaparana/features/home/widgets/event_card.dart';
 import 'package:conectaparana/features/home/widgets/home_section_title.dart';
 import 'package:conectaparana/features/home/widgets/news_card.dart';
 import 'package:conectaparana/features/home/widgets/urgent_notice_card.dart';
+import 'package:conectaparana/providers/home_content_provider.dart';
 import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -52,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _simulateLoading();
+    _loadHomeContent();
     _startSyncedCarouselAutoPlay();
   }
 
@@ -66,16 +68,28 @@ class _HomeScreenState extends State<HomeScreen> {
     _carouselAutoPlayTimer?.cancel();
 
     _carouselAutoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted || _isLoading || !widget.cityAvailable) return;
+      if (!mounted || !widget.cityAvailable) return;
 
-      if (homeEventsMock.length > 1) {
+      final homeContentProvider = context.read<HomeContentProvider>();
+
+      if (homeContentProvider.isLoading) return;
+
+      final events = homeContentProvider.events.isNotEmpty
+          ? homeContentProvider.events
+          : homeEventsMock;
+
+      final news = homeContentProvider.news.isNotEmpty
+          ? homeContentProvider.news
+          : homeNewsMock;
+
+      if (events.length > 1) {
         _eventsCarouselController.nextPage(
           duration: const Duration(milliseconds: 700),
           curve: Curves.easeInOut,
         );
       }
 
-      if (homeNewsMock.length > 1) {
+      if (news.length > 1) {
         _newsCarouselController.nextPage(
           duration: const Duration(milliseconds: 700),
           curve: Curves.easeInOut,
@@ -84,14 +98,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _simulateLoading() async {
+  Future<void> _loadHomeContent() async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeContentProvider>().loadHomeContent();
-    });
+    await context.read<HomeContentProvider>().loadHomeContent();
   }
 
   Future<void> _refreshHome() {
@@ -125,10 +137,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required int itemCount,
     required int currentIndex,
   }) {
+    if (itemCount <= 1) {
+      return const SizedBox(height: 20);
+    }
+
+    final safeCurrentIndex = currentIndex.clamp(0, itemCount - 1);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(itemCount, (index) {
-        final isActive = index == currentIndex;
+        final isActive = index == safeCurrentIndex;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -152,9 +170,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return ClipRect(
       child: CarouselSlider.builder(
         carouselController: _eventsCarouselController,
-        itemCount: homeEventsMock.length,
+        itemCount: events.length,
         itemBuilder: (context, index, realIndex) {
-          final event = homeEventsMock[index];
+          final event = events[index];
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -166,11 +184,11 @@ class _HomeScreenState extends State<HomeScreen> {
           viewportFraction: 0.78,
           enlargeCenterPage: true,
           enlargeStrategy: CenterPageEnlargeStrategy.height,
-          enableInfiniteScroll: homeEventsMock.length > 1,
+          enableInfiniteScroll: events.length > 1,
           autoPlay: false,
           onPageChanged: (index, reason) {
             setState(() {
-              _currentEventIndex = index % homeEventsMock.length;
+              _currentEventIndex = index % events.length;
             });
           },
         ),
@@ -186,16 +204,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return ClipRect(
       child: CarouselSlider.builder(
         carouselController: _newsCarouselController,
-        itemCount: homeNewsMock.length,
+        itemCount: news.length,
         itemBuilder: (context, index, realIndex) {
-          final news = homeNewsMock[index];
+          final newsItem = news[index];
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: NewsCard(
-              title: news.title,
-              description: news.description,
-              imagePath: news.imagePath,
+              title: newsItem.title,
+              description: newsItem.description,
+              imagePath: newsItem.imagePath,
             ),
           );
         },
@@ -204,11 +222,11 @@ class _HomeScreenState extends State<HomeScreen> {
           viewportFraction: 0.78,
           enlargeCenterPage: true,
           enlargeStrategy: CenterPageEnlargeStrategy.height,
-          enableInfiniteScroll: homeNewsMock.length > 1,
+          enableInfiniteScroll: news.length > 1,
           autoPlay: false,
           onPageChanged: (index, reason) {
             setState(() {
-              _currentNewsIndex = index % homeNewsMock.length;
+              _currentNewsIndex = index % news.length;
             });
           },
         ),
@@ -224,10 +242,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final news = homeContentProvider.news.isNotEmpty
         ? homeContentProvider.news
         : homeNewsMock;
-
-    final comunicados = homeContentProvider.comunicados.isNotEmpty
-        ? homeContentProvider.comunicados
-        : homeComunicadosMock;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -265,18 +279,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ),
+
           const HomeSectionTitle(title: 'Principais eventos'),
-          _buildEventsCarousel(),
+
+          _buildEventsCarousel(events),
+
           _buildCarouselDots(
             itemCount: events.length,
             currentIndex: _currentEventIndex,
           ),
+
           const HomeSectionTitle(title: 'Últimas notícias'),
-          _buildNewsCarousel(),
+
+          _buildNewsCarousel(news),
+
           _buildCarouselDots(
             itemCount: news.length,
             currentIndex: _currentNewsIndex,
           ),
+
           const SizedBox(height: 24),
         ],
       ],
@@ -298,35 +319,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSkeletonBox({required double height}) {
-    return Container(
-      width: double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFEDEEFF),
-        borderRadius: BorderRadius.circular(16),
-      ),
-    );
-  }
-
-  Widget _buildBackendWarning(String message) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
+      height: height,
       decoration: BoxDecoration(
-        color: isDark ? _darkCard : const Color(0xFFFFF7E6),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0A100)),
-      ),
-      child: Text(
-        '$message Mostrando dados de exemplo.',
-        style: GoogleFonts.montserrat(
-          color: isDark ? Colors.white70 : _gray,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
+        color: isDark ? _darkCard : _lightBackground,
+        borderRadius: BorderRadius.circular(16),
       ),
     );
   }
