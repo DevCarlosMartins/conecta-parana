@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
@@ -7,31 +7,8 @@ import { FormField } from '../../shared/components/form-field';
 import { EntityList } from '../../shared/components/entity-list';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast.service';
 import { AdministratorItem, SuperadminForm } from './superadmin.model';
-
-const MOCK_ADMINISTRATORS: AdministratorItem[] = [
-  {
-    id: 1,
-    name: 'Anna Sophia',
-    email: 'anna-sophia@gmail.com',
-    password: '123456',
-    cityId: 'maringa',
-  },
-  {
-    id: 2,
-    name: 'Patrick Melo',
-    email: 'patrickmelo@gmail.com',
-    password: '123456',
-    cityId: 'sarandi',
-  },
-  {
-    id: 3,
-    name: 'Gabriel Cabral',
-    email: 'gabrielcabra@gmail.com',
-    password: '123456',
-    cityId: 'paicandu',
-  },
-];
 
 @Component({
   selector: 'app-superadmin-page',
@@ -46,42 +23,51 @@ const MOCK_ADMINISTRATORS: AdministratorItem[] = [
   ],
   templateUrl: './superadmin.page.html',
 })
-export class SuperadminPage extends CrudPage<SuperadminForm> {
-  private readonly fb = inject(FormBuilder);
-  private readonly api = inject(ApiService);
+export class SuperadminPage extends CrudPage<SuperadminForm> implements OnInit {
+  private readonly fb    = inject(FormBuilder);
+  private readonly api   = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   protected readonly cities = signal([
-    { value: 'maringa', label: 'Maringá' },
-    { value: 'sarandi', label: 'Sarandi' },
-    { value: 'paicandu', label: 'Paiçandu' },
+    { value: '1', label: 'Maringá' },
+    { value: '2', label: 'Sarandi' },
+    { value: '3', label: 'Paiçandu' },
   ]);
 
-  readonly items = signal<AdministratorItem[]>(MOCK_ADMINISTRATORS);
+  readonly items        = signal<AdministratorItem[]>([]);
   readonly deletingItem = signal<AdministratorItem | null>(null);
+  readonly loading      = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(3)]],
-    email: ['', [Validators.required, Validators.email]],
+    name:     ['', [Validators.required, Validators.minLength(3)]],
+    email:    ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
-    cityId: ['', Validators.required],
+    cityId:   ['', Validators.required],
   });
 
   protected defaultFormValues(): SuperadminForm {
-    return {
-      name: '',
-      email: '',
-      password: '',
-      cityId: '',
-    };
+    return { name: '', email: '', password: '', cityId: '' };
+  }
+
+  ngOnInit(): void {
+    this.loadAdmins();
+  }
+
+  private loadAdmins(): void {
+    this.loading.set(true);
+    this.api.getAll<AdministratorItem>('users/admins').subscribe({
+      next: (data) => { this.items.set(data); this.loading.set(false); },
+      error: () => { this.loading.set(false); },
+    });
   }
 
   openEditForm(item: AdministratorItem): void {
     this.editingId.set(item.id);
     this.form.patchValue({
-      name: item.name,
-      email: item.email,
-      password: item.password,
-      cityId: item.cityId,
+      name:     item.name,
+      email:    item.email,
+      password: '',
+      cityId:   String(item.cityId),
     });
     this.view.set('form');
   }
@@ -96,70 +82,52 @@ export class SuperadminPage extends CrudPage<SuperadminForm> {
 
   executeDelete(): void {
     const item = this.deletingItem();
-
     if (!item) return;
 
-    this.api.delete('administradores', item.id).subscribe(() => {
-      this.items.update((list) =>
-        list.filter((administrator) => administrator.id !== item.id),
-      );
-      this.deletingItem.set(null);
+    this.api.delete('users', item.id).subscribe({
+      next: () => {
+        this.items.update((list) => list.filter((a) => a.id !== item.id));
+        this.deletingItem.set(null);
+      },
+      error: () => {
+        this.toast.show('Não foi possível excluir o administrador.', 'error');
+        this.deletingItem.set(null);
+      },
     });
   }
 
-  get nameTouched(): boolean {
-    return this.form.controls.name.touched;
-  }
+  get nameTouched():     boolean { return this.form.controls.name.touched; }
+  get emailTouched():    boolean { return this.form.controls.email.touched; }
+  get passwordTouched(): boolean { return this.form.controls.password.touched; }
+  get cityTouched():     boolean { return this.form.controls.cityId.touched; }
 
   get nameError(): string {
-    const ctrl = this.form.controls.name;
-
-    if (ctrl.hasError('required')) return 'Nome é obrigatório.';
-    if (ctrl.hasError('minlength')) return 'Nome deve ter no mínimo 3 caracteres.';
-
+    const c = this.form.controls.name;
+    if (c.hasError('required'))  return 'Nome é obrigatório.';
+    if (c.hasError('minlength')) return 'Nome deve ter no mínimo 3 caracteres.';
     return '';
-  }
-
-  get emailTouched(): boolean {
-    return this.form.controls.email.touched;
   }
 
   get emailError(): string {
-    const ctrl = this.form.controls.email;
-
-    if (ctrl.hasError('required')) return 'Email é obrigatório.';
-    if (ctrl.hasError('email')) return 'Email inválido.';
-
+    const c = this.form.controls.email;
+    if (c.hasError('required')) return 'Email é obrigatório.';
+    if (c.hasError('email'))    return 'Email inválido.';
     return '';
-  }
-
-  get passwordTouched(): boolean {
-    return this.form.controls.password.touched;
   }
 
   get passwordError(): string {
-    const ctrl = this.form.controls.password;
-
-    if (ctrl.hasError('required')) return 'Senha é obrigatória.';
-    if (ctrl.hasError('minlength')) return 'Senha deve ter no mínimo 6 caracteres.';
-
+    const c = this.form.controls.password;
+    if (c.hasError('required'))  return 'Senha é obrigatória.';
+    if (c.hasError('minlength')) return 'Senha deve ter no mínimo 6 caracteres.';
     return '';
-  }
-
-  get cityTouched(): boolean {
-    return this.form.controls.cityId.touched;
   }
 
   get cityError(): string {
-    const ctrl = this.form.controls.cityId;
-
-    if (ctrl.hasError('required')) return 'Cidade é obrigatória.';
-
-    return '';
+    return this.form.controls.cityId.hasError('required') ? 'Cidade é obrigatória.' : '';
   }
 
-  getCityLabel(cityId: string): string {
-    return this.cities().find((city) => city.value === cityId)?.label ?? cityId;
+  getCityLabel(cityId: number): string {
+    return this.cities().find((c) => Number(c.value) === cityId)?.label ?? String(cityId);
   }
 
   onSubmit(): void {
@@ -170,33 +138,38 @@ export class SuperadminPage extends CrudPage<SuperadminForm> {
 
     const raw = this.form.getRawValue();
     const currentEditingId = this.editingId();
+    this.loading.set(true);
 
     if (currentEditingId !== null) {
-      const administratorId = Number(currentEditingId);
-
-      this.api.update('administradores', administratorId, raw).subscribe(() => {
-        this.items.update((list) =>
-          list.map((administrator) =>
-            administrator.id === administratorId
-              ? { ...administrator, ...raw }
-              : administrator,
-          ),
-        );
-
-        this.closeForm();
+      this.api.update<AdministratorItem>('users', currentEditingId as number, raw).subscribe({
+        next: (updated) => {
+          this.items.update((list) =>
+            list.map((a) => (a.id === currentEditingId ? updated : a))
+          );
+          this.loading.set(false);
+          this.closeForm();
+        },
+        error: () => {
+          this.toast.show('Não foi possível atualizar o administrador.', 'error');
+          this.loading.set(false);
+        },
       });
-
-      return;
-    }
-
-    this.api.create('administradores', raw).subscribe(() => {
-      const newAdministrator: AdministratorItem = {
-        id: Date.now(),
+    } else {
+      this.api.create<AdministratorItem>('auth/register', {
         ...raw,
-      };
-
-      this.items.update((list) => [...list, newAdministrator]);
-      this.closeForm();
-    });
+        cityId: Number(raw.cityId),
+        role: 'ADMIN',
+      }).subscribe({
+        next: (created) => {
+          this.items.update((list) => [...list, created]);
+          this.loading.set(false);
+          this.closeForm();
+        },
+        error: () => {
+          this.toast.show('Não foi possível criar o administrador.', 'error');
+          this.loading.set(false);
+        },
+      });
+    }
   }
 }
