@@ -46,18 +46,18 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
   readonly photoErrors = signal<string[]>([]);
 
   readonly eventTypes = [
-    { value: 'cultural', label: 'Cultural' },
-    { value: 'esportivo', label: 'Esportivo' },
-    { value: 'saude', label: 'Saúde' },
-    { value: 'educacao', label: 'Educação' },
-    { value: 'tecnologia', label: 'Tecnologia' },
-    { value: 'lazer', label: 'Lazer' },
+    { value: 'cultural',    label: 'Cultural' },
+    { value: 'esportivo',   label: 'Esportivo' },
+    { value: 'saude',       label: 'Saúde' },
+    { value: 'educacao',    label: 'Educação' },
+    { value: 'tecnologia',  label: 'Tecnologia' },
+    { value: 'lazer',       label: 'Lazer' },
   ];
 
   readonly statusOptions = [
-    { value: 'ativo', label: 'Ativo' },
-    { value: 'agendado', label: 'Agendado' },
-    { value: 'encerrado', label: 'Encerrado' },
+    { value: 'ativo',      label: 'Ativo' },
+    { value: 'agendado',   label: 'Agendado' },
+    { value: 'encerrado',  label: 'Encerrado' },
   ];
 
   protected readonly form = this.fb.nonNullable.group({
@@ -66,7 +66,7 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     description: ['', [Validators.required, Validators.minLength(10)]],
     eventDate:   ['', [Validators.required, futureDateValidator]],
     status:      ['agendado', Validators.required],
-    latitude:    [null as number | null, [Validators.min(-90), Validators.max(90)]],
+    latitude:    [null as number | null, [Validators.min(-90),  Validators.max(90)]],
     longitude:   [null as number | null, [Validators.min(-180), Validators.max(180)]],
     localId:     [null as number | null],
   });
@@ -95,11 +95,25 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     super.openForm();
     this.photos.set([]);
     this.photoErrors.set([]);
+    
+    this.form.controls.eventDate.clearValidators();
+    this.form.controls.eventDate.addValidators([Validators.required, futureDateValidator]);
+    this.form.controls.eventDate.updateValueAndValidity();
   }
 
   openEditForm(item: EventItem): void {
     this.editingId.set(item.id);
-    this.form.patchValue(item);
+
+    this.form.controls.eventDate.clearValidators();
+    this.form.controls.eventDate.addValidators(Validators.required);
+    this.form.controls.eventDate.updateValueAndValidity();
+
+    // Converte a data ISO para o formato aceito pelo datetime-local
+    const dateValue = item.eventDate
+      ? new Date(item.eventDate).toISOString().slice(0, 16)
+      : '';
+
+    this.form.patchValue({ ...item, eventDate: dateValue });
     this.view.set('form');
   }
 
@@ -111,7 +125,42 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     });
   }
 
-  get titleTouched(): boolean { return this.form.controls.title.touched; }
+formatEventDate(eventDate: string): string {
+  if (!eventDate) return '';
+  const date = new Date(eventDate);
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+  get titleTouched(): boolean { 
+    return this.form.controls.title.touched; 
+  }
+
+  get typeTouched(): boolean { 
+    return this.form.controls.type.touched; 
+  }
+
+  get descriptionTouched(): boolean { 
+    return this.form.controls.description.touched; 
+  }
+
+  get eventDateTouched(): boolean { 
+    return this.form.controls.eventDate.touched; 
+  }
+
+  get latitudeTouched(): boolean { 
+    return this.form.controls.latitude.touched; 
+  }
+
+  get longitudeTouched(): boolean { 
+    return this.form.controls.longitude.touched; 
+  }
+
   get titleError(): string {
     const c = this.form.controls.title;
     if (c.hasError('required')) return 'Título é obrigatório.';
@@ -120,12 +169,10 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     return '';
   }
 
-  get typeTouched(): boolean { return this.form.controls.type.touched; }
   get typeError(): string {
     return this.form.controls.type.hasError('required') ? 'Tipo é obrigatório.' : '';
   }
 
-  get descriptionTouched(): boolean { return this.form.controls.description.touched; }
   get descriptionError(): string {
     const c = this.form.controls.description;
     if (c.hasError('required')) return 'Descrição é obrigatória.';
@@ -133,7 +180,6 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     return '';
   }
 
-  get eventDateTouched(): boolean { return this.form.controls.eventDate.touched; }
   get eventDateError(): string {
     const c = this.form.controls.eventDate;
     if (c.hasError('required')) return 'Data do evento é obrigatória.';
@@ -141,13 +187,11 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     return '';
   }
 
-  get latitudeTouched(): boolean { return this.form.controls.latitude.touched; }
   get latitudeError(): string {
     const c = this.form.controls.latitude;
     return (c.hasError('min') || c.hasError('max')) ? 'Latitude deve estar entre -90 e 90.' : '';
-  } 
+  }
 
-  get longitudeTouched(): boolean { return this.form.controls.longitude.touched; }
   get longitudeError(): string {
     const c = this.form.controls.longitude;
     return (c.hasError('min') || c.hasError('max')) ? 'Longitude deve estar entre -180 e 180.' : '';
@@ -191,14 +235,19 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
     }
 
     const raw = this.form.getRawValue();
+    const id  = this.editingId();
+
     const payload: Record<string, unknown> = {
-      title: raw.title,
-      type: raw.type,
+      title:       raw.title,
+      type:        raw.type,
       description: raw.description,
-      eventDate: raw.eventDate,
-      status: raw.status,
-      cityId: 1,
+      eventDate:   raw.eventDate,
+      status:      raw.status,
     };
+
+    if (!id) {
+      payload['cityId'] = 1;
+    }
 
     if (raw.latitude !== null && raw.longitude !== null) {
       payload['coordinates'] = { lat: raw.latitude, lng: raw.longitude };
@@ -208,7 +257,6 @@ export class EventsPage extends CrudPage<EventsFormValues> implements OnInit {
       payload['localId'] = raw.localId;
     }
 
-    const id = this.editingId();
     this.loading.set(true);
 
     if (id) {
