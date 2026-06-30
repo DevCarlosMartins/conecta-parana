@@ -72,14 +72,6 @@ export class NewsService {
   async remove(id: number, adminCityId: number | null) {
     this.assertAdminCityId(adminCityId);
 
-    const news = await this.findOne(id);
-
-    if (news.cityId !== adminCityId) {
-      throw new ForbiddenException(
-        'Não é permitido remover notícias de outra cidade',
-      );
-    }
-
     try {
       return await this.prisma.client.news.delete({
         where: { id },
