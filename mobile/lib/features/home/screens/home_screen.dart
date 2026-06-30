@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
     required this.onSearchTap,
     required this.onNotificationTap,
     required this.onEventTap,
+    required this.onNewsTap,
   });
 
   final String cityName;
@@ -29,6 +30,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
   final void Function(String eventTitle) onEventTap;
+  final void Function(String newsTitle) onNewsTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -220,6 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: newsItem.title,
               description: newsItem.description,
               imagePath: newsItem.imagePath,
+              onTap: () => widget.onNewsTap(newsItem.title),
             ),
           );
         },

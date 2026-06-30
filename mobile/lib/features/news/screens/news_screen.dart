@@ -5,19 +5,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class NewsScreen extends StatelessWidget {
+class NewsScreen extends StatefulWidget {
   const NewsScreen({
     super.key,
     required this.cityName,
     required this.onCityTap,
     required this.onSearchTap,
     required this.onNotificationTap,
+    this.newsTitleToOpen,
+    this.newsOpenRequestId = 0,
   });
 
   final String cityName;
   final VoidCallback onCityTap;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final String? newsTitleToOpen;
+  final int newsOpenRequestId;
+
+  @override
+  State<NewsScreen> createState() => _NewsScreenState();
+}
+
+class _NewsScreenState extends State<NewsScreen> {
+  late final NewsService _newsService;
+  late Future<List<NewsMock>> _newsFuture;
+
+  int _lastHandledNewsOpenRequestId = 0;
 
   static const Color _teal = Color(0xFF146E77);
   static const Color _blue = Color(0xFF264CA9);
@@ -28,66 +42,124 @@ class NewsScreen extends StatelessWidget {
   static const Color _darkCard = Color(0xFF1E1E1E);
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: isDark ? _darkBackground : Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              AppHeader(
-                cityName: cityName,
-                onCityTap: onCityTap,
-                onSearchTap: onSearchTap,
-                onNotificationTap: onNotificationTap,
-              ),
+  void initState() {
+    super.initState();
+    _newsService = NewsService();
+    _newsFuture = _newsService.getNews();
+    _openRequestedNewsDetailsAfterLoad();
+  }
 
-              const SizedBox(height: 28),
+  @override
+  void didUpdateWidget(covariant NewsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [_blue, _green],
-                ).createShader(bounds),
-                child: Text(
-                  'Notícias',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
+    if (widget.newsOpenRequestId != oldWidget.newsOpenRequestId) {
+      _openRequestedNewsDetailsAfterLoad();
+    }
+  }
 
-              const SizedBox(height: 24),
+  Future<void> _refreshNews() async {
+    setState(() {
+      _newsFuture = _newsService.getNews();
+    });
 
-              FutureBuilder<List<NewsMock>>(
-                future: _loadNews(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return _buildLoadingState(context);
-                  }
+    await _newsFuture;
 
-                  if (snapshot.hasError) {
-                    return _buildErrorState(context);
-                  }
+    if (!mounted) return;
 
-                  final newsList = snapshot.data ?? [];
+    _openRequestedNewsDetailsAfterLoad();
+  }
 
-                  if (newsList.isEmpty) {
-                    return _buildEmptyState(context);
-                  }
+  void _openRequestedNewsDetailsAfterLoad() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (widget.newsTitleToOpen == null) return;
+      if (_lastHandledNewsOpenRequestId == widget.newsOpenRequestId) return;
 
-                  return _buildNewsList(context, newsList);
-                },
-              ),
-            ],
-          ),
+      final newsList = await _newsFuture;
+
+      if (!mounted) return;
+
+      final news = _findNewsByTitle(newsList, widget.newsTitleToOpen!);
+
+      if (news == null) return;
+
+      _lastHandledNewsOpenRequestId = widget.newsOpenRequestId;
+      _showNewsDetails(context, news);
+    });
+  }
+
+  NewsMock? _findNewsByTitle(List<NewsMock> newsList, String title) {
+    final normalizedTitle = _normalizeNewsTitle(title);
+
+    for (final news in newsList) {
+      final normalizedNewsTitle = _normalizeNewsTitle(news.title);
+
+      if (normalizedNewsTitle == normalizedTitle ||
+          normalizedTitle.contains(normalizedNewsTitle) ||
+          normalizedNewsTitle.contains(normalizedTitle)) {
+        return news;
+      }
+    }
+
+    return null;
+  }
+
+  String _normalizeNewsTitle(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  Widget _buildGradientTitle() {
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) {
+        return const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [_blue, _green],
+        ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
+      },
+      child: Text(
+        'Notícias',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.montserrat(
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.5,
         ),
       ),
+    );
+  }
+
+  Widget _buildNewsList(BuildContext context, List<NewsMock> newsList) {
+    return ListView.separated(
+      itemCount: newsList.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      separatorBuilder: (_, _) => const SizedBox(height: 20),
+      itemBuilder: (context, index) {
+        final news = newsList[index];
+
+        return _NewsListCard(
+          news: news,
+          onTap: () => _showNewsDetails(context, news),
+          onMoreInfoTap: () => _showNewsDetails(context, news),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : _lightBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Center(child: CircularProgressIndicator(color: _teal)),
     );
   }
 
@@ -110,6 +182,46 @@ class NewsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : _lightBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        'Não foi possível carregar as notícias.',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.montserrat(
+          color: isDark ? Colors.white : _gray,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNewsLink(BuildContext context, NewsMock news) async {
+    final uri = Uri.parse(news.sourceUrl);
+
+    final canOpen = await canLaunchUrl(uri);
+
+    if (!context.mounted) return;
+
+    if (!canOpen) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível abrir o link da notícia.'),
+        ),
+      );
+      return;
+    }
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _showNewsDetails(BuildContext context, NewsMock news) {
@@ -148,9 +260,7 @@ class NewsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
                     ClipRRect(
                       borderRadius: BorderRadius.circular(18),
                       child: Image.asset(
@@ -172,9 +282,7 @@ class NewsScreen extends StatelessWidget {
                         },
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
                     Text(
                       news.title,
                       style: GoogleFonts.montserrat(
@@ -183,9 +291,7 @@ class NewsScreen extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     Text(
                       news.publicationInfo,
                       style: GoogleFonts.montserrat(
@@ -194,9 +300,7 @@ class NewsScreen extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-
                     const SizedBox(height: 14),
-
                     Text(
                       news.description,
                       style: GoogleFonts.montserrat(
@@ -206,9 +310,7 @@ class NewsScreen extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-
                     const SizedBox(height: 22),
-
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -230,9 +332,7 @@ class NewsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -263,77 +363,54 @@ class NewsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openNewsLink(BuildContext context, NewsMock news) async {
-    final uri = Uri.parse(news.sourceUrl);
-
-    final canOpen = await canLaunchUrl(uri);
-
-    if (!context.mounted) return;
-
-    if (!canOpen) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível abrir o link da notícia.'),
-        ),
-      );
-      return;
-    }
-
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-
-  Future<List<NewsMock>> _loadNews() {
-    return NewsService().getNews();
-  }
-
-  Widget _buildNewsList(BuildContext context, List<NewsMock> newsList) {
-    return ListView.separated(
-      itemCount: newsList.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      separatorBuilder: (_, _) => const SizedBox(height: 20),
-      itemBuilder: (context, index) {
-        final news = newsList[index];
-
-        return _NewsListCard(
-          news: news,
-          onTap: () => _showNewsDetails(context, news),
-          onMoreInfoTap: () => _showNewsDetails(context, news),
-        );
-      },
-    );
-  }
-
-  Widget _buildLoadingState(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? _darkCard : _lightBackground,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Center(child: CircularProgressIndicator(color: _teal)),
-    );
-  }
+    return Scaffold(
+      backgroundColor: isDark ? _darkBackground : Colors.white,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refreshNews,
+          color: _teal,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AppHeader(
+                  cityName: widget.cityName,
+                  onCityTap: widget.onCityTap,
+                  onSearchTap: widget.onSearchTap,
+                  onNotificationTap: widget.onNotificationTap,
+                ),
+                const SizedBox(height: 28),
+                _buildGradientTitle(),
+                const SizedBox(height: 24),
+                FutureBuilder<List<NewsMock>>(
+                  future: _newsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return _buildLoadingState(context);
+                    }
 
-  Widget _buildErrorState(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    if (snapshot.hasError) {
+                      return _buildErrorState(context);
+                    }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? _darkCard : _lightBackground,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        'Não foi possível carregar as notícias.',
-        textAlign: TextAlign.center,
-        style: GoogleFonts.montserrat(
-          color: isDark ? Colors.white : _gray,
-          fontWeight: FontWeight.w700,
+                    final newsList = snapshot.data ?? [];
+
+                    if (newsList.isEmpty) {
+                      return _buildEmptyState(context);
+                    }
+
+                    return _buildNewsList(context, newsList);
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
