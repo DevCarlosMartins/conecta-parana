@@ -34,6 +34,7 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    required int cityId,
   }) async {
     if (_isLoading) return false;
 
@@ -41,7 +42,12 @@ class AuthProvider extends ChangeNotifier {
     clearMessages();
 
     try {
-      await _authService.register(name: name, email: email, password: password);
+      await _authService.register(
+        name: name,
+        email: email,
+        password: password,
+        cityId: cityId,
+      );
 
       _successMessage = 'Conta criada com sucesso. Faça login para continuar.';
       return true;
@@ -67,12 +73,18 @@ class AuthProvider extends ChangeNotifier {
 
       _isAuthenticated = true;
       _isGuest = false;
+      _successMessage = 'Login realizado com sucesso.';
+
       return true;
     } on AuthException catch (e) {
       _errorMessage = e.message;
+      _isAuthenticated = false;
+
       return false;
     } catch (_) {
-      _errorMessage = 'E-mail ou senha inválidos.';
+      _errorMessage = 'Não foi possível fazer login.';
+      _isAuthenticated = false;
+
       return false;
     } finally {
       _setLoading(false);
