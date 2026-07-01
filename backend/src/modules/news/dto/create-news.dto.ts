@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateNewsDto {
@@ -18,18 +18,26 @@ export class CreateNewsDto {
   @MinLength(10, { message: 'Descrição deve ter pelo menos 10 caracteres' })
   description!: string;
 
-  @ApiProperty({ example: 'evento', description: 'Tipo da notícia' })
+  @ApiProperty({ example: 'geral', description: 'Tipo da notícia' })
   @IsString({ message: 'Tipo deve ser um texto' })
   @MinLength(3, { message: 'Tipo deve ter pelo menos 3 caracteres' })
   type!: string;
 
   @ApiProperty({
-    example: 'interno',
+    example: 'external',
     description: 'Tipo do link associado à notícia',
   })
   @IsString({ message: 'Tipo do link deve ser um texto' })
   @MinLength(3, { message: 'Tipo do link deve ter pelo menos 3 caracteres' })
   linkType!: string;
+
+  @ApiPropertyOptional({
+    example: 'https://g1.globo.com/pr/norte-noroeste/noticia/exemplo.ghtml',
+    description: 'URL externa ou slug interno da notícia',
+  })
+  @IsOptional()
+  @IsString({ message: 'URL da notícia deve ser um texto' })
+  linkUrl?: string;
 
   @ApiProperty({ example: true, description: 'Indica se a notícia está ativa' })
   @IsBoolean({ message: 'isActive deve ser um booleano' })

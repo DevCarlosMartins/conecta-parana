@@ -166,6 +166,7 @@ model News {
   description String
   type        String
   linkType    String  @map("link_type")
+  linkUrl     String? @map("link_url")
   isActive    Boolean @map("is_active")
   cityId      Int     @map("city_id")
 

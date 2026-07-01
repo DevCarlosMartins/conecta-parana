@@ -46,6 +46,7 @@ export class NewsService {
         description: dto.description,
         type: dto.type,
         linkType: dto.linkType,
+        linkUrl: dto.linkUrl?.trim() || null,
         isActive: dto.isActive ?? true,
         cityId: adminCityId,
       },
@@ -65,7 +66,10 @@ export class NewsService {
 
     return this.prisma.client.news.update({
       where: { id },
-      data: dto,
+      data: {
+        ...dto,
+        linkUrl: dto.linkUrl?.trim() || null,
+      },
     });
   }
 
