@@ -4,8 +4,26 @@
   @let locals = items();
 
   @if (locals.length === 0) {
-    <div class="mt-10 text-center text-gray-400 text-sm">
-      Nenhum local cadastrado ainda.
+    <div class="admin-card mt-5 flex flex-col items-center justify-center rounded-3xl px-8 py-16 text-center">
+      <div class="gradient-primary mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-bold text-white shadow-[0_12px_28px_rgba(2,145,68,0.22)]">
+        +
+      </div>
+
+      <h2 class="text-lg font-extrabold text-gray-900">
+        Nenhum local cadastrado ainda
+      </h2>
+
+      <p class="mt-2 max-w-md text-sm leading-6 text-gray-500">
+        Cadastre locais úteis para exibir pontos de interesse no aplicativo e no mapa.
+      </p>
+
+      <button
+        type="button"
+        (click)="openForm()"
+        class="gradient-primary mt-5 rounded-2xl px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,145,68,0.24)] transition hover:brightness-105"
+      >
+        Criar primeiro local
+      </button>
     </div>
   } @else {
     <div class="mt-6 overflow-x-auto rounded-lg border border-gray-200">

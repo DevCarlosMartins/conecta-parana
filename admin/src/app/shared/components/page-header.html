@@ -1,10 +1,31 @@
-<div class="flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-black">{{ title() }}</h1>
-  <button
-    type="button"
-    (click)="create.emit()"
-    class="rounded-lg bg-white px-4 py-2 text-md font-semibold text-gray-900 transition hover:bg-gray-200 cursor-pointer"
-  >
-    {{ buttonLabel() }}
-  </button>
-</div>
+<section class="admin-card mb-6 overflow-hidden rounded-3xl px-6 py-5">
+  <div class="flex items-center justify-between gap-5">
+    <div class="flex min-w-0 items-center gap-4">
+      <div class="gradient-primary h-14 w-1.5 rounded-full"></div>
+
+      <div class="min-w-0">
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary">
+          Painel municipal
+        </p>
+
+        <h1 class="mt-1 text-[24px] font-extrabold tracking-tight text-foreground">
+          {{ title() }}
+        </h1>
+
+        <p class="mt-1 max-w-2xl text-sm text-muted-foreground">
+          {{ subtitleText() }}
+        </p>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      (click)="create.emit()"
+      class="gradient-primary h-11 shrink-0 cursor-pointer rounded-2xl px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,145,68,0.24)] transition hover:brightness-105 active:scale-[0.98]"
+    >
+      {{ buttonLabel() }}
+    </button>
+  </div>
+
+  <div class="mt-5 h-px w-full bg-gradient-to-r from-primary via-emerald-300 to-transparent"></div>
+</section>

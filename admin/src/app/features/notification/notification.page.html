@@ -1,38 +1,66 @@
-@if (view() === 'list') {
-  <app-page-header title="NOTIFICAÇÕES" buttonLabel="Criar notificação" (create)="openForm()" />
+<app-page-header title="NOTIFICAÇÕES" buttonLabel="Criar notificação" (create)="openForm()" />
 
+@if (view() === 'list') {
   <div class="mt-6 space-y-4">
     @if (loading()) {
-      <p class="text-sm text-gray-500">Carregando notificações...</p>
+      <div class="admin-card rounded-3xl px-6 py-5">
+        <p class="text-sm text-gray-500">Carregando notificações...</p>
+      </div>
     } @else if (items().length === 0) {
-      <div class="rounded-lg bg-form-bg p-5 text-sm font-medium text-gray-800">
-        Nenhuma notificação criada até o momento.
+      <div class="admin-card mt-5 flex flex-col items-center justify-center rounded-3xl px-8 py-16 text-center">
+        <div
+          class="gradient-primary mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-bold text-white shadow-[0_12px_28px_rgba(2,145,68,0.22)]"
+        >
+          !
+        </div>
+
+        <h2 class="text-lg font-extrabold text-gray-900">
+          Nenhuma notificação enviada ainda
+        </h2>
+
+        <p class="mt-2 max-w-md text-sm leading-6 text-gray-500">
+          Crie notificações para avisar os cidadãos sobre eventos, comunicados e informações importantes.
+        </p>
+
+        <button
+          type="button"
+          (click)="openForm()"
+          class="gradient-primary mt-5 rounded-2xl px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,145,68,0.24)] transition hover:brightness-105 active:scale-[0.98]"
+        >
+          Criar primeira notificação
+        </button>
       </div>
     } @else {
       @for (item of items(); track item.id) {
-        <div class="rounded-lg bg-form-bg p-5 shadow-sm">
-          <h2 class="text-lg font-bold text-gray-900">{{ item.title }}</h2>
-          <p class="mt-2 text-sm text-gray-700">{{ item.description }}</p>
-          @if (item.eventId) {
-            <span class="mt-3 inline-block rounded-md bg-input-bg px-3 py-1 text-xs font-semibold uppercase text-gray-800">
-              Evento #{{ item.eventId }}
-            </span>
-          }
-          @if (item.comunicadoId) {
-            <span class="mt-3 inline-block rounded-md bg-input-bg px-3 py-1 text-xs font-semibold uppercase text-gray-800">
-              Comunicado #{{ item.comunicadoId }}
-            </span>
-          }
+        <div class="admin-card admin-card-hover rounded-2xl p-5">
+          <h2 class="text-lg font-bold text-gray-900">
+            {{ item.title }}
+          </h2>
+
+          <p class="mt-2 text-sm leading-6 text-gray-700">
+            {{ item.description }}
+          </p>
+
+          <div class="mt-3 flex flex-wrap gap-2">
+            @if (item.eventId) {
+              <span class="inline-block rounded-md bg-input-bg px-3 py-1 text-xs font-semibold uppercase text-gray-800">
+                Evento #{{ item.eventId }}
+              </span>
+            }
+
+            @if (item.comunicadoId) {
+              <span class="inline-block rounded-md bg-input-bg px-3 py-1 text-xs font-semibold uppercase text-gray-800">
+                Comunicado #{{ item.comunicadoId }}
+              </span>
+            }
+          </div>
         </div>
       }
     }
   </div>
-}
-
-@if (view() === 'form') {
+} @else {
   <app-form-container title="CRIAR NOTIFICAÇÃO">
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
-
       <app-form-field
         label="Título"
         fieldId="title"
@@ -45,7 +73,7 @@
           formControlName="title"
           type="text"
           placeholder="Digite o título da notificação"
-          class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+          class="w-full rounded-xl border-0 bg-input-bg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </app-form-field>
 
@@ -61,13 +89,14 @@
           formControlName="description"
           rows="4"
           placeholder="Digite a descrição da notificação"
-          class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          class="w-full resize-none rounded-xl border-0 bg-input-bg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
         ></textarea>
       </app-form-field>
 
-      <div class="bg-[#FFF9C4] border-l-4 border-[#FBC02D] p-4 flex items-start gap-3 rounded-r-lg">
+      <div class="flex items-start gap-3 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
         <span class="text-lg">⚠️</span>
-        <p class="text-sm text-gray-700 leading-relaxed">
+
+        <p class="text-sm leading-relaxed text-gray-700">
           Esta notificação será enviada para todos os usuários da sua cidade.
         </p>
       </div>
@@ -76,18 +105,18 @@
         <button
           type="button"
           (click)="closeForm()"
-          class="rounded-lg bg-btn-cancel px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-btn-cancel-hover cursor-pointer"
+          class="cursor-pointer rounded-xl bg-btn-cancel px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-btn-cancel-hover"
         >
           Cancelar
         </button>
+
         <button
           type="submit"
-          class="rounded-lg bg-btn-create px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-btn-create-hover cursor-pointer"
+          class="gradient-primary cursor-pointer rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,145,68,0.24)] transition hover:brightness-105 active:scale-[0.98]"
         >
           Enviar Notificação
         </button>
       </div>
-
     </form>
   </app-form-container>
 }
