@@ -1,18 +1,18 @@
-<div class="flex h-screen bg-background overflow-hidden">
+<div class="flex h-screen overflow-hidden bg-background text-foreground">
   <app-sidebar [items]="navItems" (logout)="onLogout()" />
+
   <div class="flex flex-1 flex-col overflow-hidden">
-    <main class="flex-1 overflow-y-auto px-8 py-8 max-w-[1400px] w-full mx-auto">
-      
-      <div class="pointer-events-none fixed bottom-0 left-[260px] right-0 flex justify-center z-0">
+    <main class="gradient-soft relative flex-1 overflow-y-auto px-8 py-7">
+      <div class="pointer-events-none fixed bottom-0 left-[260px] right-0 z-0 flex justify-center">
         <img
           src="fundo-parana.png"
           alt=""
           aria-hidden="true"
-          class="w-[70%] max-w-[900px] opacity-30 select-none"
+          class="w-[66%] max-w-[900px] select-none opacity-20"
         />
       </div>
 
-      <div>
+      <div class="relative z-10 mx-auto w-full max-w-[1420px]">
         <router-outlet />
       </div>
     </main>

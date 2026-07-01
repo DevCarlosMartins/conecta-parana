@@ -1,76 +1,107 @@
-<aside class="gradient-sidebar flex h-screen w-[260px] shrink-0 flex-col">
+<aside class="gradient-sidebar flex h-screen w-[260px] shrink-0 flex-col shadow-2xl shadow-emerald-950/20">
+  <div class="border-b border-white/10 px-5 py-5">
+    <div class="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+          <img
+            src="paranalogo.png"
+            alt="Logo"
+            class="h-5 w-5 object-contain brightness-0 invert"
+          />
+        </div>
 
-  <!-- Logo -->
-  <div class="px-5 py-5 border-b border-white/10">
-    <div class="flex items-center gap-3">
-      <div class="gradient-primary flex h-9 w-9 items-center justify-center rounded-xl">
-        <img src="paranalogo.png" alt="Logo" class="h-5 w-5 object-contain brightness-0 invert" />
-      </div>
-      <div>
-        <span class="block text-[13px] font-semibold text-white leading-tight">Conecta Paraná</span>
-        <span class="block text-[11px] text-white/45">Painel municipal</span>
+        <div>
+          <span class="block text-[13px] font-bold leading-tight text-white">
+            Conecta Paraná
+          </span>
+          <span class="block text-[11px] text-white/55">
+            Painel municipal
+          </span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Navegação -->
-  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+  <nav class="flex-1 overflow-y-auto px-3 py-4">
+    <div class="space-y-6">
+      <div>
+        <p class="mb-2 px-2 text-[10.5px] font-bold uppercase tracking-[0.22em] text-white/45">
+          Geral
+        </p>
 
-    <!-- Grupo Geral -->
-    <div>
-      <p class="mb-2 px-2 text-[10.5px] font-semibold tracking-[0.18em] uppercase text-white/45">Geral</p>
-      <ul class="space-y-0.5">
-        @for (item of items(); track item.route) {
-          @if (item.group === 'Geral') {
-            <li>
-              <a [routerLink]="item.route"
-                routerLinkActive="bg-sidebar-active text-white"
-                [routerLinkActiveOptions]="{ exact: false }"
-                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition-all hover:bg-sidebar-hover hover:text-white">
-                <span class="h-[18px] w-[18px] shrink-0 flex items-center justify-center" [innerHTML]="getIcon(item.icon)"></span>
-                <span>{{ item.label }}</span>
-              </a>
-            </li>
+        <ul class="space-y-1">
+          @for (item of items(); track item.route) {
+            @if (item.group === 'Geral') {
+              <li>
+                <a
+                  [routerLink]="item.route"
+                  routerLinkActive="bg-white/15 text-white shadow-sm"
+                  [routerLinkActiveOptions]="{ exact: false }"
+                  class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white/75 transition-all hover:bg-white/10 hover:text-white"
+                >
+                  <span
+                    class="flex h-[18px] w-[18px] shrink-0 items-center justify-center"
+                    [innerHTML]="getIcon(item.icon)"
+                  ></span>
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
           }
-        }
-      </ul>
-    </div>
+        </ul>
+      </div>
 
-    <!-- Grupo Gestão -->
-    <div>
-      <p class="mb-2 px-2 text-[10.5px] font-semibold tracking-[0.18em] uppercase text-white/45">Gestão</p>
-      <ul class="space-y-0.5">
-        @for (item of items(); track item.route) {
-          @if (item.group === 'Gestão') {
-            <li>
-              <a [routerLink]="item.route"
-                routerLinkActive="bg-sidebar-active text-white"
-                [routerLinkActiveOptions]="{ exact: false }"
-                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition-all hover:bg-sidebar-hover hover:text-white">
-                <span class="h-[18px] w-[18px] shrink-0 flex items-center justify-center" [innerHTML]="getIcon(item.icon)"></span>
-                <span>{{ item.label }}</span>
-              </a>
-            </li>
+      <div>
+        <p class="mb-2 px-2 text-[10.5px] font-bold uppercase tracking-[0.22em] text-white/45">
+          Gestão
+        </p>
+
+        <ul class="space-y-1">
+          @for (item of items(); track item.route) {
+            @if (item.group === 'Gestão') {
+              <li>
+                <a
+                  [routerLink]="item.route"
+                  routerLinkActive="bg-white/15 text-white shadow-sm"
+                  [routerLinkActiveOptions]="{ exact: false }"
+                  class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white/75 transition-all hover:bg-white/10 hover:text-white"
+                >
+                  <span
+                    class="flex h-[18px] w-[18px] shrink-0 items-center justify-center"
+                    [innerHTML]="getIcon(item.icon)"
+                  ></span>
+                  <span>{{ item.label }}</span>
+                </a>
+              </li>
+            }
           }
-        }
-      </ul>
+        </ul>
+      </div>
     </div>
-
   </nav>
 
-  <!-- Rodapé -->
   <div class="border-t border-white/10 p-3">
     <button
       type="button"
       (click)="logout.emit()"
-      class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/60 transition-all hover:bg-sidebar-hover hover:text-white cursor-pointer"
+      class="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white/60 transition-all hover:bg-white/10 hover:text-white"
       aria-label="Sair da conta"
     >
-      <svg class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
+      <svg
+        class="h-[18px] w-[18px] shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="2"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"
+        />
       </svg>
+
       <span>Sair</span>
     </button>
   </div>
-
 </aside>

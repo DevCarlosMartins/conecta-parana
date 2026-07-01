@@ -1,6 +1,27 @@
 @if (view() === 'list') {
   <app-page-header title="EVENTOS" buttonLabel="Criar evento" (create)="openForm()" />
-  <!-- TODO: listar eventos da API -->
+
+  <div class="admin-card mt-5 flex flex-col items-center justify-center rounded-3xl px-8 py-16 text-center">
+    <div class="gradient-primary mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-bold text-white shadow-[0_12px_28px_rgba(2,145,68,0.22)]">
+      +
+    </div>
+
+    <h2 class="text-lg font-extrabold text-gray-900">
+      Nenhum evento cadastrado ainda
+    </h2>
+
+    <p class="mt-2 max-w-md text-sm leading-6 text-gray-500">
+      Cadastre eventos públicos para que eles apareçam no aplicativo do cidadão.
+    </p>
+
+    <button
+      type="button"
+      (click)="openForm()"
+      class="gradient-primary mt-5 rounded-2xl px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,145,68,0.24)] transition hover:brightness-105"
+    >
+      Criar primeiro evento
+    </button>
+  </div>
 } @else {
   <app-form-container title="CRIAR EVENTO">
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
