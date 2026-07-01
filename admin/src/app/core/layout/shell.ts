@@ -13,13 +13,12 @@ export class Shell {
   private readonly auth = inject(AuthService);
 
   protected readonly navItems: NavItem[] = [
-    { label: 'Postagens', route: '/posts', icon: 'pencil-square', group: 'Geral'},
-    { label: 'Eventos', route: '/events', icon: 'calendar-days', group: 'Geral' },
-    { label: 'Notícias', route: '/news', icon: 'newspaper', group: 'Geral' },
-    { label: 'Locais', route: '/locals', icon: 'map-pin', group: 'Geral' },
-    { label: 'Notificações', route: '/notifications', icon: 'bell', group: 'Gestão' },
-    { label: 'Administradores', route: '/superadmin', icon: 'pencil-square', group: 'Gestão' },
-    // TODO: futuramente exibir a tela "criar Adm" apenas para superadministradores.
+    { label: 'Postagens',       route: '/posts',         icon: 'pencil-square', group: 'Geral'},
+    { label: 'Eventos',         route: '/events',        icon: 'calendar-days', group: 'Geral' },
+    { label: 'Notícias',        route: '/news',          icon: 'newspaper',     group: 'Geral' },
+    { label: 'Locais',          route: '/locals',        icon: 'map-pin',       group: 'Geral' },
+    { label: 'Notificações',    route: '/notifications', icon: 'bell',          group: 'Gestão' },
+    { label: 'Administradores', route: '/superadmin',    icon: 'users',         group: 'Gestão' },
   ];
 
   onLogout(): void {

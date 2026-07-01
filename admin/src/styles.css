@@ -1,46 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @theme {
 
-/* Principal */
-  --color-primary: #0F6E56;
-  --color-primary-dark: #085041;
-  --color-primary-light: #E1F5EE;
-  --color-primary-text:  #9FE1CB;
+  /* Fonte */
+  --font-sans: 'Inter', sans-serif; 
+
+  /* Principal */
+  --color-primary            : oklch(0.56 0.12 165);
+  --color-primary-dark       : oklch(0.46 0.12 165);
+  --color-primary-light      : oklch(0.96 0.04 165);
+  --color-primary-foreground : #ffffff;
+  --color-primary-glow       : oklch(0.72 0.14 165);
 
   /* Nav Bar */
 
-  --color-sidebar:       #0F6E56;
-  --color-sidebar-dark:  #085041;
-  --color-sidebar-text:  rgba(255,255,255,0.70);
-  --color-sidebar-hover: rgba(255,255,255,0.08);
-  --color-sidebar-active:rgba(255,255,255,0.14);
+  --color-sidebar        : oklch(0.28 0.08 165);
+  --color-sidebar-dark   : oklch(0.22 0.08 165);
+  --color-sidebar-text   : rgba(255,255,255,0.75);
+  --color-sidebar-hover  : rgba(255,255,255,0.08);
+  --color-sidebar-active : rgba(255,255,255,0.12);
 
-  /* ── Fundo ── */
-  --color-shell-bg:      #F8F9FA;
-  --color-content-bg:    #FFFFFF;
-  --color-form-bg:       #FFFFFF;
-  --color-input-bg:      #F3F4F6;
+  /* Fundo  */
+  --color-background:  #FEFEFE;
+  --color-shell-bg:    #FEFEFE;
+  --color-content-bg:  #ffffff;
+  --color-form-bg:     #ffffff;
+  --color-input-bg:    #F3F4F6;
+  --color-card:        #ffffff;
+  --color-muted:       #F3F4F6;
 
-  /* ── Textos ── */
-  --color-text-strong:   #111827;
-  --color-text-default:  #374151;
-  --color-text-muted:    #6B7280;
+  /* Textos */
+  --color-foreground:       #111827;
+  --color-text-strong:      #111827;
+  --color-text-default:     #374151;
+  --color-text-muted:       #6B7280;
+  --color-muted-foreground: #6B7280;
 
-  /* ── Bordas ── */
-  --color-border:        #E5E7EB;
-  --color-border-strong: #D1D5DB;
+  /*  Bordas  */
+  --color-border        : #E5E7EB;
+  --color-border-strong : #D1D5DB;
 
-  /* ── Status ── */
-  --color-success:       #16A34A;
-  --color-warning:       #D97706;
-  --color-danger:        #DC2626;
+  /*  Status  */
+  --color-success     : #16A34A;
+  --color-warning     : #D97706;
+  --color-danger      : #DC2626;
+  --color-destructive : #DC2626;
+  --color-destructive-foreground: #ffffff;
 
-  /* ── Botão ── */
-  --color-btn-cancel:       #DC2626;
-  --color-btn-cancel-hover: #B91C1C;
-  --color-btn-create:       #0F6E56;
-  --color-btn-create-hover: #085041;
+  /*  Botão  */
+  --color-btn-cancel       : #DC2626;
+  --color-btn-cancel-hover : #B91C1C;
+  --color-btn-create       : oklch(0.56 0.12 165);
+  --color-btn-create-hover : oklch(0.46 0.12 165);
+
+  /* Sombras */
+  --shadow-card     : 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-elevated : 0 4px 16px rgba(0,0,0,0.10);
+}
+
+* { font-family: 'Inter', sans-serif; }
+
+.gradient-sidebar {
+  background: linear-gradient(160deg, oklch(0.32 0.10 165) 0%, oklch(0.46 0.12 165) 100%);
 }
 
 .toast-container {

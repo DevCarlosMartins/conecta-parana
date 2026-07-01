@@ -1,10 +1,13 @@
-<div class="flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-black">{{ title() }}</h1>
-  <button
-    type="button"
-    (click)="create.emit()"
-    class="rounded-lg bg-white px-4 py-2 text-md font-semibold text-gray-900 transition hover:bg-gray-200 cursor-pointer"
-  >
-    {{ buttonLabel() }}
-  </button>
+<div class="mb-6">
+  <div class="flex items-center justify-between pb-4 border-b-2 border-primary">
+    <h1 class="text-[22px] font-bold tracking-tight text-foreground">{{ title() }}</h1>
+    <button
+      type="button"
+      (click)="create.emit()"
+      style="background: linear-gradient(135deg, oklch(0.56 0.12 165) 0%, oklch(0.46 0.12 165) 100%)"
+      class="gradient-primary h-10 px-4 rounded-xl text-sm font-semibold text-white shadow-[var(--shadow-elevated)] hover:brightness-105 active:brightness-95 transition cursor-pointer"
+    >
+      {{ buttonLabel() }}
+    </button>
+  </div>
 </div>
