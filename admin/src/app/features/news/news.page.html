@@ -17,12 +17,15 @@
     <p class="mt-1 truncate text-xs text-gray-600">{{ item.description }}</p>
   </ng-template>
 
-  <app-entity-list
+  @if (loading()) {
+    <div class = "mt-10 text-center text-gray-400"> Carregando notícias... </div>
+  }@else{<app-entity-list
     [items]="items()"
     [rowTemplate]="newsRow"
     (edit)="openEditForm($any($event))"
     (delete)="confirmDelete($any($event))"
-  />
+  />}
+  
 } @else {
   <app-form-container [title]="isEditing ? 'EDITAR NOTÍCIA' : 'CRIAR NOTÍCIA'">
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">

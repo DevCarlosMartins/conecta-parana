@@ -78,7 +78,11 @@ describe('ComunicadoService', () => {
     it('respeita isActive=false explicito', async () => {
       mockPrisma.client.comunicado.create.mockResolvedValue({});
 
-      await service.create({ ...dto, isActive: false });
+      await service.create({
+        ...dto,
+        isActive: false,
+        category: '',
+      });
 
       expect(mockPrisma.client.comunicado.create).toHaveBeenCalledWith({
         data: {
@@ -91,7 +95,11 @@ describe('ComunicadoService', () => {
     it('respeita isActive=true', async () => {
       mockPrisma.client.comunicado.create.mockResolvedValue({});
 
-      await service.create({ title: dto.title, description: dto.description });
+      await service.create({
+        title: dto.title,
+        description: dto.description,
+        category: '',
+      });
 
       expect(mockPrisma.client.comunicado.create).toHaveBeenCalledWith({
         data: {

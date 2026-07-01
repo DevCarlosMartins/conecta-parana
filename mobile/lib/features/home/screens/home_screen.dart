@@ -1,8 +1,16 @@
+import 'dart:async';
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:conectaparana/features/home/data/home_mock_data.dart';
+import 'package:conectaparana/features/home/widgets/event_card.dart';
+import 'package:conectaparana/features/home/widgets/home_section_title.dart';
+import 'package:conectaparana/features/home/widgets/news_card.dart';
+import 'package:conectaparana/features/home/widgets/urgent_notice_card.dart';
+import 'package:conectaparana/providers/home_content_provider.dart';
+import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:conectaparana/shared/widgets/app_header.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -12,6 +20,8 @@ class HomeScreen extends StatefulWidget {
     required this.onCityTap,
     required this.onSearchTap,
     required this.onNotificationTap,
+    required this.onEventTap,
+    required this.onNewsTap,
   });
 
   final String cityName;
@@ -19,21 +29,27 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onCityTap;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final void Function(String eventTitle) onEventTap;
+  final void Function(String newsTitle) onNewsTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoading = true;
   bool _showUrgentNotice = true;
 
   int _currentEventIndex = 0;
   int _currentNewsIndex = 0;
 
+  final CarouselSliderController _eventsCarouselController =
+      CarouselSliderController();
+  final CarouselSliderController _newsCarouselController =
+      CarouselSliderController();
+
+  Timer? _carouselAutoPlayTimer;
+
   static const Color _teal = Color(0xFF146E77);
-  static const Color _blue = Color(0xFF264CA9);
-  static const Color _green = Color(0xFF029144);
   static const Color _gray = Color(0xFF444444);
   static const Color _lightBackground = Color(0xFFEDEEFF);
   static const Color _darkBackground = Color(0xFF121212);
@@ -42,114 +58,61 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _simulateLoading();
+    _loadHomeContent();
+    _startSyncedCarouselAutoPlay();
   }
 
-  Future<void> _simulateLoading() async {
+  @override
+  void dispose() {
+    _carouselAutoPlayTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startSyncedCarouselAutoPlay() {
+    _carouselAutoPlayTimer?.cancel();
+
+    _carouselAutoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || !widget.cityAvailable) return;
+
+      final homeContentProvider = context.read<HomeContentProvider>();
+
+      if (homeContentProvider.isLoading) return;
+
+      final events = homeContentProvider.events.isNotEmpty
+          ? homeContentProvider.events
+          : homeEventsMock;
+
+      final news = homeContentProvider.news.isNotEmpty
+          ? homeContentProvider.news
+          : homeNewsMock;
+
+      if (events.length > 1) {
+        _eventsCarouselController.nextPage(
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      if (news.length > 1) {
+        _newsCarouselController.nextPage(
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _loadHomeContent() async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
 
-    setState(() {
-      _isLoading = false;
-    });
+    await context.read<HomeContentProvider>().loadHomeContent();
   }
 
-  Future<void> _refreshHome() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  Widget _buildUrgentNotice() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? _darkCard : Colors.white;
-    final textColor = isDark ? Colors.white : _gray;
-
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'COMUNICADO URGENTE!\nCratera se abre em cruzamento entre Av. Paraná e Av. Horácio Raccanello.',
-              style: GoogleFonts.montserrat(
-                color: textColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showUrgentNotice = false;
-              });
-            },
-            icon: Icon(
-              Icons.close,
-              size: 18,
-              color: isDark ? Colors.white70 : _gray,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 24, bottom: 12),
-        child: ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) {
-            return const LinearGradient(
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
-              colors: [_blue, _green],
-            ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
-          },
-          child: Text(
-            title,
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-      ),
+  Future<void> _refreshHome() {
+    return context.read<HomeContentProvider>().loadHomeContent(
+      forceRefresh: true,
     );
   }
 
@@ -178,10 +141,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required int itemCount,
     required int currentIndex,
   }) {
+    if (itemCount <= 1) {
+      return const SizedBox(height: 20);
+    }
+
+    final safeCurrentIndex = currentIndex.clamp(0, itemCount - 1);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(itemCount, (index) {
-        final isActive = index == currentIndex;
+        final isActive = index == safeCurrentIndex;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -197,173 +166,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEventsCarousel() {
-    if (homeEventsMock.isEmpty) {
+  Widget _buildEventsCarousel(List<HomeEventMock> events) {
+    if (events.isEmpty) {
       return _buildEmptyState('Nenhum evento disponível no momento.');
     }
 
-    return CarouselSlider.builder(
-      itemCount: homeEventsMock.length,
-      itemBuilder: (context, index, realIndex) {
-        final event = homeEventsMock[index];
+    return ClipRect(
+      child: CarouselSlider.builder(
+        carouselController: _eventsCarouselController,
+        itemCount: events.length,
+        itemBuilder: (context, index, realIndex) {
+          final event = events[index];
 
-        return _buildEventCard(event);
-      },
-      options: CarouselOptions(
-        height: 220,
-        viewportFraction: 0.78,
-        enlargeCenterPage: true,
-        enableInfiniteScroll: homeEventsMock.length > 1,
-        onPageChanged: (index, reason) {
-          setState(() {
-            _currentEventIndex = index % homeEventsMock.length;
-          });
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: EventCard(
+              title: event.title,
+              imagePath: event.imagePath,
+              onTap: () => widget.onEventTap(event.title),
+            ),
+          );
         },
-      ),
-    );
-  }
-
-  Widget _buildEventCard(HomeEventMock event) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? _darkCard : Colors.white;
-    final textColor = isDark ? Colors.white : _gray;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _blue, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          children: [
-            Expanded(
-              child: Image.asset(
-                event.imagePath,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                event.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
-                  color: textColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
+        options: CarouselOptions(
+          height: 220,
+          viewportFraction: 0.78,
+          enlargeCenterPage: true,
+          enlargeStrategy: CenterPageEnlargeStrategy.height,
+          enableInfiniteScroll: events.length > 1,
+          autoPlay: false,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentEventIndex = index % events.length;
+            });
+          },
         ),
       ),
     );
   }
 
-  Widget _buildNewsCarousel() {
-    if (homeNewsMock.isEmpty) {
+  Widget _buildNewsCarousel(List<HomeNewsMock> news) {
+    if (news.isEmpty) {
       return _buildEmptyState('Nenhuma notícia disponível no momento.');
     }
 
-    return CarouselSlider.builder(
-      itemCount: homeNewsMock.length,
-      itemBuilder: (context, index, realIndex) {
-        final news = homeNewsMock[index];
+    return ClipRect(
+      child: CarouselSlider.builder(
+        carouselController: _newsCarouselController,
+        itemCount: news.length,
+        itemBuilder: (context, index, realIndex) {
+          final newsItem = news[index];
 
-        return _buildNewsCard(news);
-      },
-      options: CarouselOptions(
-        height: 230,
-        viewportFraction: 0.78,
-        enlargeCenterPage: true,
-        enableInfiniteScroll: homeNewsMock.length > 1,
-        onPageChanged: (index, reason) {
-          setState(() {
-            _currentNewsIndex = index % homeNewsMock.length;
-          });
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: NewsCard(
+              title: newsItem.title,
+              description: newsItem.description,
+              imagePath: newsItem.imagePath,
+              onTap: () => widget.onNewsTap(newsItem.title),
+            ),
+          );
         },
-      ),
-    );
-  }
-
-  Widget _buildNewsCard(HomeNewsMock news) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? _darkCard : Colors.white;
-    final textColor = isDark ? Colors.white : _gray;
-    final descriptionColor = isDark ? Colors.white70 : _gray;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _teal, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Image.asset(
-                news.imagePath,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Text(
-                news.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.montserrat(
-                  color: textColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-              child: Text(
-                news.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.montserrat(
-                  color: descriptionColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+        options: CarouselOptions(
+          height: 250,
+          viewportFraction: 0.78,
+          enlargeCenterPage: true,
+          enlargeStrategy: CenterPageEnlargeStrategy.height,
+          enableInfiniteScroll: news.length > 1,
+          autoPlay: false,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentNewsIndex = index % news.length;
+            });
+          },
         ),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(HomeContentProvider homeContentProvider) {
+    final events = homeContentProvider.events.isNotEmpty
+        ? homeContentProvider.events
+        : homeEventsMock;
+
+    final news = homeContentProvider.news.isNotEmpty
+        ? homeContentProvider.news
+        : homeNewsMock;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -374,15 +262,14 @@ class _HomeScreenState extends State<HomeScreen> {
           onNotificationTap: widget.onNotificationTap,
         ),
 
+        if (widget.cityAvailable) SizedBox(height: _showUrgentNotice ? 12 : 48),
+
         if (!widget.cityAvailable) ...[
           const SizedBox(height: 120),
-
           _buildEmptyState(
             'No momento, o Conecta Paraná está disponível apenas para Maringá.',
           ),
-
           const SizedBox(height: 24),
-
           Text(
             '${widget.cityName} estará disponível em breve.',
             textAlign: TextAlign.center,
@@ -393,23 +280,30 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ] else ...[
-          if (_showUrgentNotice) _buildUrgentNotice(),
+          if (_showUrgentNotice)
+            UrgentNoticeCard(
+              onClose: () {
+                setState(() {
+                  _showUrgentNotice = false;
+                });
+              },
+            ),
 
-          _buildSectionTitle('Principais eventos'),
+          const HomeSectionTitle(title: 'Principais eventos'),
 
-          _buildEventsCarousel(),
+          _buildEventsCarousel(events),
 
           _buildCarouselDots(
-            itemCount: homeEventsMock.length,
+            itemCount: events.length,
             currentIndex: _currentEventIndex,
           ),
 
-          _buildSectionTitle('Últimas notícias'),
+          const HomeSectionTitle(title: 'Últimas notícias'),
 
-          _buildNewsCarousel(),
+          _buildNewsCarousel(news),
 
           _buildCarouselDots(
-            itemCount: homeNewsMock.length,
+            itemCount: news.length,
             currentIndex: _currentNewsIndex,
           ),
 
@@ -434,11 +328,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSkeletonBox({required double height}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFEDEEFF),
+        color: isDark ? _darkCard : _lightBackground,
         borderRadius: BorderRadius.circular(16),
       ),
     );
@@ -451,14 +347,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: isDark ? _darkBackground : Colors.white,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refreshHome,
-          color: _teal,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: _isLoading ? _buildLoadingSkeleton() : _buildContent(),
-          ),
+        child: Consumer<HomeContentProvider>(
+          builder: (context, homeContentProvider, _) {
+            return RefreshIndicator(
+              onRefresh: _refreshHome,
+              color: _teal,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: homeContentProvider.isLoading
+                    ? _buildLoadingSkeleton()
+                    : _buildContent(homeContentProvider),
+              ),
+            );
+          },
         ),
       ),
     );

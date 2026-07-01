@@ -1,5 +1,7 @@
+import 'package:conectaparana/features/map/screens/map_screen.dart';
+import 'package:conectaparana/features/profile/screens/profile_screen.dart';
+import 'package:conectaparana/features/news/screens/news_screen.dart';
 import 'package:conectaparana/providers/auth_provider.dart';
-import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +18,12 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   String _selectedCity = 'Maringá';
+
+  String? _eventTitleToOpen;
+  int _eventOpenRequestId = 0;
+
+  String? _newsTitleToOpen;
+  int _newsOpenRequestId = 0;
 
   static const Color _teal = Color(0xFF146E77);
   static const Color _gray = Color(0xFF5A5A5A);
@@ -172,6 +180,22 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
+  void _openEventDetailsFromAnotherScreen(String eventTitle) {
+    setState(() {
+      _currentIndex = 3;
+      _eventTitleToOpen = eventTitle;
+      _eventOpenRequestId++;
+    });
+  }
+
+  void _openNewsDetailsFromHome(String newsTitle) {
+    setState(() {
+      _currentIndex = 1;
+      _newsTitleToOpen = newsTitle;
+      _newsOpenRequestId++;
+    });
+  }
+
   List<Widget> _buildPages() {
     final cityAvailable = _selectedCity == 'Maringá';
 
@@ -182,22 +206,24 @@ class _MainShellState extends State<MainShell> {
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
+        onEventTap: _openEventDetailsFromAnotherScreen,
+        onNewsTap: _openNewsDetailsFromHome,
       ),
-      _ShellPlaceholderPage(
-        title: 'Notícias',
+      NewsScreen(
+        cityName: _selectedCity,
+        onCityTap: _openCitySelector,
+        onSearchTap: _openSearch,
+        onNotificationTap: _openNotifications,
+        newsTitleToOpen: _newsTitleToOpen,
+        newsOpenRequestId: _newsOpenRequestId,
+      ),
+      MapScreen(
         cityName: _selectedCity,
         cityAvailable: cityAvailable,
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
-      ),
-      _ShellPlaceholderPage(
-        title: 'Mapa',
-        cityName: _selectedCity,
-        cityAvailable: cityAvailable,
-        onCityTap: _openCitySelector,
-        onSearchTap: _openSearch,
-        onNotificationTap: _openNotifications,
+        onEventTap: _openEventDetailsFromAnotherScreen,
       ),
       EventsScreen(
         cityName: _selectedCity,
@@ -205,11 +231,11 @@ class _MainShellState extends State<MainShell> {
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
+        eventTitleToOpen: _eventTitleToOpen,
+        eventOpenRequestId: _eventOpenRequestId,
       ),
-      _ShellPlaceholderPage(
-        title: 'Perfil',
+      ProfileScreen(
         cityName: _selectedCity,
-        cityAvailable: cityAvailable,
         onCityTap: _openCitySelector,
         onSearchTap: _openSearch,
         onNotificationTap: _openNotifications,
@@ -282,72 +308,7 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-class _ShellPlaceholderPage extends StatelessWidget {
-  const _ShellPlaceholderPage({
-    required this.title,
-    required this.cityName,
-    required this.cityAvailable,
-    required this.onCityTap,
-    required this.onSearchTap,
-    required this.onNotificationTap,
-  });
 
-  final String title;
-  final String cityName;
-  final bool cityAvailable;
-  final VoidCallback onCityTap;
-  final VoidCallback onSearchTap;
-  final VoidCallback onNotificationTap;
-
-  static const Color _teal = Color(0xFF146E77);
-  static const Color _gray = Color(0xFF5A5A5A);
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(
-          children: [
-            AppHeader(
-              cityName: cityName,
-              onCityTap: onCityTap,
-              onSearchTap: onSearchTap,
-              onNotificationTap: onNotificationTap,
-            ),
-            const Spacer(),
-            const Icon(Icons.construction_outlined, size: 56, color: _teal),
-            const SizedBox(height: 16),
-            Text(
-              cityAvailable ? '$title em breve' : '$cityName em breve',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: isDark ? Colors.white : _gray,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              cityAvailable
-                  ? 'Estamos trabalhando para trazer esta funcionalidade o mais rápido possível.'
-                  : 'No momento, o Conecta Paraná está disponível apenas para Maringá.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: isDark ? Colors.white70 : _gray,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _NotificationsPlaceholderPage extends StatelessWidget {
   const _NotificationsPlaceholderPage();

@@ -11,6 +11,8 @@ class EventsScreen extends StatefulWidget {
     required this.onCityTap,
     required this.onSearchTap,
     required this.onNotificationTap,
+    this.eventTitleToOpen,
+    this.eventOpenRequestId = 0,
   });
 
   final String cityName;
@@ -18,6 +20,8 @@ class EventsScreen extends StatefulWidget {
   final VoidCallback onCityTap;
   final VoidCallback onSearchTap;
   final VoidCallback onNotificationTap;
+  final String? eventTitleToOpen;
+  final int eventOpenRequestId;
 
   @override
   State<EventsScreen> createState() => _EventsScreenState();
@@ -25,6 +29,7 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   bool _isLoading = true;
+  int _lastHandledEventOpenRequestId = 0;
 
   static const Color _blue = Color(0xFF264CA9);
   static const Color _green = Color(0xFF029144);
@@ -40,6 +45,17 @@ class _EventsScreenState extends State<EventsScreen> {
     _simulateLoading();
   }
 
+  @override
+  void didUpdateWidget(covariant EventsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.eventOpenRequestId != oldWidget.eventOpenRequestId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openRequestedEventDetails();
+      });
+    }
+  }
+
   Future<void> _simulateLoading() async {
     await Future.delayed(const Duration(seconds: 1));
 
@@ -47,6 +63,10 @@ class _EventsScreenState extends State<EventsScreen> {
 
     setState(() {
       _isLoading = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openRequestedEventDetails();
     });
   }
 
@@ -62,6 +82,46 @@ class _EventsScreenState extends State<EventsScreen> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  void _openRequestedEventDetails() {
+    if (!mounted) return;
+    if (_isLoading) return;
+    if (!widget.cityAvailable) return;
+    if (widget.eventTitleToOpen == null) return;
+    if (_lastHandledEventOpenRequestId == widget.eventOpenRequestId) return;
+
+    final event = _findEventByTitle(widget.eventTitleToOpen!);
+
+    if (event == null) return;
+
+    _lastHandledEventOpenRequestId = widget.eventOpenRequestId;
+    _showEventDetails(event);
+  }
+
+  EventMock? _findEventByTitle(String title) {
+    final normalizedTitle = _normalizeEventTitle(title);
+
+    for (final event in eventsMock) {
+      final normalizedEventTitle = _normalizeEventTitle(event.title);
+
+      if (normalizedEventTitle == normalizedTitle ||
+          normalizedTitle.contains(normalizedEventTitle) ||
+          normalizedEventTitle.contains(normalizedTitle)) {
+        return event;
+      }
+    }
+
+    return null;
+  }
+
+  String _normalizeEventTitle(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll('2026', '')
+        .replaceAll('de maringá', '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   Widget _buildGradientTitle() {
@@ -264,228 +324,206 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   void _showEventDetails(EventMock event) {
-  showDialog<void>(
-    context: context,
-    builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
-      final dialogColor = isDark ? _darkCard : Colors.white;
-      final textColor = isDark ? Colors.white : _gray;
-      final descriptionColor = isDark ? Colors.white70 : _gray;
+        final dialogColor = isDark ? _darkCard : Colors.white;
+        final textColor = isDark ? Colors.white : _gray;
+        final descriptionColor = isDark ? Colors.white70 : _gray;
 
-      return Dialog(
-        backgroundColor: dialogColor,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.82,
-            maxWidth: 420,
+        return Dialog(
+          backgroundColor: dialogColor,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
           ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          event.title,
-                          style: GoogleFonts.montserrat(
-                            color: _teal,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.82,
+              maxWidth: 420,
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            event.title,
+                            style: GoogleFonts.montserrat(
+                              color: _teal,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.close,
-                          color: isDark ? Colors.white70 : _gray,
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(
+                            Icons.close,
+                            color: isDark ? Colors.white70 : _gray,
+                          ),
                         ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        event.imagePath,
+                        width: double.infinity,
+                        height: 180,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: double.infinity,
+                            height: 180,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF2A2A2A)
+                                  : _lightBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: _teal),
+                            ),
+                            child: const Icon(
+                              Icons.image_not_supported_outlined,
+                              color: _teal,
+                              size: 42,
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 18),
 
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      event.imagePath,
+                    _buildEventDetailRow(
+                      icon: Icons.location_on_outlined,
+                      title: 'Local',
+                      value: event.location,
+                      textColor: textColor,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _buildEventDetailRow(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Data',
+                      value: event.date,
+                      textColor: textColor,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Text(
+                      'Descrição',
+                      style: GoogleFonts.montserrat(
+                        color: _teal,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      event.description,
+                      style: GoogleFonts.montserrat(
+                        color: descriptionColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        height: 1.45,
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    SizedBox(
                       width: double.infinity,
-                      height: 180,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: double.infinity,
-                          height: 180,
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF2A2A2A)
-                                : _lightBackground,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: _teal),
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: _teal,
-                            size: 42,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  _buildEventDetailRow(
-                    icon: Icons.location_on_outlined,
-                    title: 'Local',
-                    value: event.location,
-                    textColor: textColor,
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  _buildEventDetailRow(
-                    icon: Icons.calendar_today_outlined,
-                    title: 'Data',
-                    value: event.date,
-                    textColor: textColor,
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Text(
-                    'Descrição',
-                    style: GoogleFonts.montserrat(
-                      color: _teal,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    event.description,
-                    style: GoogleFonts.montserrat(
-                      color: descriptionColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      height: 1.45,
-                    ),
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
                         ),
-                      ),
-                      child: Text(
-                        'Fechar',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.w800,
+                        child: Text(
+                          'Fechar',
+                          style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-Widget _buildEventDetailRow({
-  required IconData icon,
-  required String title,
-  required String value,
-  required Color textColor,
-}) {
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: _lightBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _teal),
-        ),
-        child: Icon(
-          icon,
-          color: _teal,
-          size: 20,
-        ),
-      ),
-
-      const SizedBox(width: 12),
-
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.montserrat(
-                color: _teal,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: GoogleFonts.montserrat(
-                color: textColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-  Widget _buildBottomSheetInfoRow({
+  Widget _buildEventDetailRow({
     required IconData icon,
-    required String text,
-    required Color color,
+    required String title,
+    required String value,
+    required Color textColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: _teal),
-        const SizedBox(width: 8),
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF103B40) : _lightBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _teal),
+          ),
+          child: Icon(icon, color: _teal, size: 20),
+        ),
+
+        const SizedBox(width: 12),
+
         Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.montserrat(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.montserrat(
+                  color: _teal,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.montserrat(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       ],

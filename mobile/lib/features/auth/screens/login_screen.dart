@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final password = _passwordController.text.trim();
 
     final authProvider = context.read<AuthProvider>();
 
@@ -47,17 +47,20 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.pushReplacementNamed(context, '/home');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login realizado com sucesso.')),
+      );
+
+      Navigator.of(context).pushReplacementNamed('/home');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          authProvider.errorMessage ?? 'Não foi possível realizar o login.',
-        ),
-      ),
-    );
+    final message =
+        authProvider.errorMessage ?? 'Não foi possível fazer login.';
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String? _validateEmail(String? value) {

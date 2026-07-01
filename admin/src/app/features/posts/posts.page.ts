@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CrudPage } from '../../shared/utils/crud-page';
 import { PageHeader } from '../../shared/components/page-header';
@@ -6,6 +6,8 @@ import { FormContainer } from '../../shared/components/form-container';
 import { FormField } from '../../shared/components/form-field';
 import { noSpecialChars } from '../../shared/validators/no-special-chars.validator';
 import { Post, PostForm } from './posts.model';
+import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../shared/components/toast.service';
 
 interface PostFormValues {
   title: string;
@@ -13,40 +15,20 @@ interface PostFormValues {
   category: PostForm['category'] | '';
 }
 
-const MOCK_POSTS: Post[] = [
-  {
-    id: 1,
-    title: 'Feira cultural na praça central',
-    description:
-      'Evento com música, gastronomia e atrações para toda a família no centro da cidade.',
-    category: 'evento',
-  },
-  {
-    id: 2,
-    title: 'Nova unidade de saúde será inaugurada',
-    description:
-      'A prefeitura anunciou a inauguração de uma nova unidade de saúde para ampliar o atendimento.',
-    category: 'noticia',
-  },
-  {
-    id: 3,
-    title: 'Mudança no horário de atendimento',
-    description:
-      'Atenção: alguns serviços públicos terão novo horário de funcionamento a partir da próxima semana.',
-    category: 'comunicado',
-  },
-];
-
 @Component({
   selector: 'app-posts-page',
   standalone: true,
   imports: [ReactiveFormsModule, PageHeader, FormContainer, FormField],
   templateUrl: './posts.page.html',
 })
-export class PostsPage extends CrudPage<PostFormValues> {
-  private readonly fb = inject(FormBuilder);
 
-  readonly posts = signal<Post[]>(MOCK_POSTS);
+export class PostsPage extends CrudPage<PostFormValues> implements OnInit {
+  private readonly fb    = inject(FormBuilder);
+  private readonly api   = inject(ApiService);
+  private readonly toast = inject(ToastService);
+
+  readonly posts   = signal<Post[]>([]);
+  readonly loading = signal(false);
 
   readonly categories = [
     { value: 'evento', label: 'Evento' },
@@ -66,6 +48,24 @@ export class PostsPage extends CrudPage<PostFormValues> {
       description: '',
       category: '',
     };
+  }
+
+  ngOnInit(): void {
+    this.loadPosts();
+  }
+
+  private loadPosts(): void {
+    this.loading.set(true);
+    this.api.getAll<Post>('comunicados').subscribe({
+      next: (data) => {
+        this.posts.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.toast.show('Não foi possivel carregar as postagens. Tente novamente!');
+        this.loading.set(false);
+      },
+    });
   }
 
   override openForm(): void {
@@ -154,7 +154,14 @@ export class PostsPage extends CrudPage<PostFormValues> {
       return;
     }
 
-    this.posts.update((list) => list.filter((post) => post.id !== id));
+    this.api.delete('comunicados', id).subscribe({
+      next: () => {
+        this.posts.update((list) => list.filter((post) => post.id !== id));
+      },
+      error: () => {
+        this.toast.show('Não foi possível excluir a postagem. Tente novamente!');
+      },
+    });
   }
 
   onSubmit(): void {
@@ -165,31 +172,34 @@ export class PostsPage extends CrudPage<PostFormValues> {
 
     const raw = this.form.getRawValue();
     const currentEditingId = this.editingId();
+    this.loading.set(true);
 
     if (currentEditingId !== null) {
-      this.posts.update((list) =>
-        list.map((post) =>
-          post.id === currentEditingId
-            ? {
-                ...post,
-                title: raw.title,
-                description: raw.description,
-                category: raw.category as PostForm['category'],
-              }
-            : post,
-        ),
-      );
+      this.api.update<Post>('comunicados', currentEditingId as number, raw).subscribe({
+        next: (update) => {
+          this.posts.update((list) => 
+            list.map((post) => (post.id === currentEditingId ? update: post))
+          );
+          this.loading.set(false);
+          this.closeForm();
+        },
+        error: () => {
+          this.toast.show('Não foi possível atualizar a postagem. Tente novamente!');
+          this.loading.set(false);
+        },
+      });
     } else {
-      const newPost: Post = {
-        id: Date.now(),
-        title: raw.title,
-        description: raw.description,
-        category: raw.category as PostForm['category'],
-      };
-
-      this.posts.update((list) => [...list, newPost]);
+      this.api.create<Post>('comunicados', raw).subscribe({
+        next: (created) => {
+          this.posts.update((list) => [...list, created]);
+          this.loading.set(false);
+          this.closeForm();
+        },
+        error: () => {
+          this.toast.show('Não foi possivel criar a postagem. Tente novamente!');
+          this.loading.set(false);
+        },
+      });
     }
-
-    this.closeForm();
   }
 }

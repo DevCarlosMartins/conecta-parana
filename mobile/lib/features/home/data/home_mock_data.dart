@@ -49,7 +49,7 @@ const homeNewsMock = [
         'Nick e Tuco foram resgatados feridos e hoje convivem com os servidores.',
   ),
   HomeNewsMock(
-    title: 'Paraná Junino abre a o calendário de festas de graça no estado',
+    title: 'Paraná Junino abre o calendário de festas de graça no estado',
     imagePath: 'assets/images/parana_junino.png',
     description:
         'Evento do Sesc e da RPC tem comidas típicas e atrações para a família.',
@@ -59,5 +59,20 @@ const homeNewsMock = [
     imagePath: 'assets/images/campeao_multas.png',
     description:
         'Fiorino acumulou autuações em 13 anos e tinha restrição judicial ativa.',
+  ),
+];
+
+class HomeComunicadoMock {
+  const HomeComunicadoMock({required this.title, required this.description});
+
+  final String title;
+  final String description;
+}
+
+const homeComunicadosMock = [
+  HomeComunicadoMock(
+    title: 'COMUNICADO URGENTE!',
+    description:
+        'Cratera se abre em cruzamento entre Av. Paraná e Av. Horácio Raccanello.',
   ),
 ];

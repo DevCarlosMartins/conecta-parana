@@ -1,7 +1,7 @@
 @if (view() === 'list') {
   <app-page-header title="LOCAIS" buttonLabel="Criar local" (create)="openForm()" />
 
-  @let locals = getLocals();
+  @let locals = items();
 
   @if (locals.length === 0) {
     <div class="admin-card mt-5 flex flex-col items-center justify-center rounded-3xl px-8 py-16 text-center">
@@ -32,9 +32,8 @@
           <tr>
             <th class="px-4 py-3">Nome</th>
             <th class="px-4 py-3">Categoria</th>
+            <th class="px-4 py-3">Endereço</th>
             <th class="px-4 py-3">Telefone</th>
-            <th class="px-4 py-3">Latitude</th>
-            <th class="px-4 py-3">Longitude</th>
             <th class="px-4 py-3 text-right">Ações</th>
           </tr>
         </thead>
@@ -42,10 +41,9 @@
           @for (local of locals; track local.id) {
             <tr class="hover:bg-gray-50 transition-colors">
               <td class="px-4 py-3 font-medium text-gray-900">{{ local.name }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ local.category }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ local.category.name }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ local.address || '—' }}</td>
               <td class="px-4 py-3 text-gray-600">{{ local.phone || '—' }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ local.latitude }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ local.longitude }}</td>
               <td class="px-4 py-3 text-right">
                 <div class="flex justify-end gap-2">
                   <button
@@ -86,15 +84,22 @@
         <app-form-field label="Telefone" fieldId="phone" [required]="false"
           [showError]="false" errorMessage="">
           <input id="phone" formControlName="phone" type="text"
-            placeholder="Digite o telefone"
+            placeholder="(44) 99999-9999"
             class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" />
         </app-form-field>
       </div>
 
-      <app-form-field label="Descrição" fieldId="description" [required]="false"
-        [showError]="false" errorMessage="">
-        <input id="description" formControlName="description" type="text"
-          placeholder="Digite a descrição do local"
+      <app-form-field label="Descrição" fieldId="description" [required]="true"
+        [showError]="descriptionTouched && !!descriptionError" [errorMessage]="descriptionError">
+        <textarea id="description" formControlName="description" rows="3"
+          placeholder="Descreva o local"
+          class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+      </app-form-field>
+
+      <app-form-field label="Endereço" fieldId="address" [required]="true"
+        [showError]="addressTouched && !!addressError" [errorMessage]="addressError">
+        <input id="address" formControlName="address" type="text"
+          placeholder="Rua, número, bairro"
           class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" />
       </app-form-field>
 
@@ -102,43 +107,28 @@
         <app-form-field label="Latitude" fieldId="latitude" [required]="true"
           [showError]="latitudeTouched && !!latitudeError" [errorMessage]="latitudeError">
           <input id="latitude" formControlName="latitude" type="text"
-            placeholder="Digite a latitude"
+            placeholder="-23.4253"
             class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" />
         </app-form-field>
 
         <app-form-field label="Longitude" fieldId="longitude" [required]="true"
           [showError]="longitudeTouched && !!longitudeError" [errorMessage]="longitudeError">
           <input id="longitude" formControlName="longitude" type="text"
-            placeholder="Digite a longitude"
+            placeholder="-51.9383"
             class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" />
         </app-form-field>
       </div>
 
-      <app-form-field label="Categoria" fieldId="category" [required]="true"
-        [showError]="categoryTouched && !!categoryError" [errorMessage]="categoryError">
-        <select id="category" formControlName="category"
+      <app-form-field label="Categoria" fieldId="categoryId" [required]="true"
+        [showError]="categoryIdTouched && !!categoryIdError" [errorMessage]="categoryIdError">
+        <select id="categoryId" formControlName="categoryId"
           class="w-full rounded-md border-0 bg-input-bg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="">Selecione a categoria do local</option>
-          @for (cat of categories; track cat) {
-            <option [value]="cat">{{ cat }}</option>
+          @for (cat of categories(); track cat.id) {
+            <option [value]="cat.id">{{ cat.name }}</option>
           }
         </select>
       </app-form-field>
-
-      <!-- Campo de foto: só exibe em criação, ou em edição se quiser trocar -->
-      <!-- Campo de foto: só exibe em criação, ou em edição se quiser trocar -->
-<app-form-field label="Foto(s) do Local" fieldId="photos"
-  [required]="!editingId()"
-  [showError]="photosTouched && !!photosError" [errorMessage]="photosError">
-  <button
-    type="button"
-    class="w-full rounded-md border-2 border-dashed border-gray-300 bg-input-bg px-3 py-6 text-sm text-gray-500 text-center cursor-pointer hover:border-primary transition-colors"
-    (click)="fileInput.click()">
-    📎 {{ editingId() ? 'Clique para substituir as fotos (opcional)' : 'Arraste ou clique para adicionar fotos' }}
-    <input #fileInput id="photos" type="file" multiple accept="image/*"
-      class="hidden" (change)="onPhotosChange($event)" />
-  </button>
-</app-form-field>
 
       <div class="flex justify-end gap-3 pt-2">
         <button type="button" (click)="closeForm()"

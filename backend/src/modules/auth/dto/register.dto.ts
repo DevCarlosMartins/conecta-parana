@@ -1,17 +1,20 @@
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { Role } from '@prisma/client';
 
 export class RegisterDto {
   @ApiProperty({ example: 'Johnny CuteBottom' })
   @IsString()
-  @IsNotEmpty({ message: 'Nome é obrigatório!' })
+  @IsNotEmpty({ message: 'Nome é obrigatório' })
   name!: string;
 
   @ApiProperty({ example: 'johnny.cutebottom@example.com' })
@@ -19,16 +22,21 @@ export class RegisterDto {
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.toLowerCase().trim() : value,
   )
-  @IsNotEmpty({ message: 'Email é obrigatório!' })
+  @IsNotEmpty({ message: 'Email é obrigatório' })
   email!: string;
 
   @ApiProperty({ example: 'password123', minLength: 6 })
   @IsString()
-  @IsNotEmpty({ message: 'Senha é obrigatória!' })
+  @IsNotEmpty({ message: 'Senha é obrigatória' })
   @MinLength(6)
   password!: string;
 
   @ApiProperty({ example: 1 })
   @IsNumber()
   cityId!: number;
+
+  @ApiProperty({ example: 'ADMIN', enum: Role, required: false })
+  @IsEnum(Role)
+  @IsOptional()
+  role?: Role;
 }

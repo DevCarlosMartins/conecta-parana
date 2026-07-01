@@ -21,12 +21,12 @@ class AuthService {
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
-  static const int _defaultCityId = 1;
 
   Future<void> register({
     required String name,
     required String email,
     required String password,
+    required int cityId,
   }) async {
     final uri = Uri.parse('${Environment.apiBaseUrl}/auth/register');
 
@@ -40,7 +40,7 @@ class AuthService {
               'name': name,
               'email': email,
               'password': password,
-              'cityId': _defaultCityId,
+              'cityId': cityId,
             }),
           )
           .timeout(const Duration(seconds: 15));

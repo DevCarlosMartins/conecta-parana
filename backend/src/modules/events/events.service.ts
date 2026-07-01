@@ -68,9 +68,7 @@ export class EventsService {
     const events = await this.prisma.client.event.findMany({
       where,
       include: eventInclude,
-      orderBy: {
-        eventDate: 'asc',
-      },
+      orderBy: { eventDate: 'asc' },
     });
 
     return this.withCoordinates(events);
@@ -82,22 +80,16 @@ export class EventsService {
       include: eventInclude,
     });
 
-    if (!event) {
-      throw new NotFoundException('Evento não encontrado');
-    }
+    if (!event) throw new NotFoundException('Evento não encontrado');
 
     const [eventWithCoordinates] = await this.withCoordinates([event]);
-
     return eventWithCoordinates;
   }
 
-  async create(
-    dto: CreateEventDto,
-    currentUser: CurrentUser,
-  ): Promise<EventResponse> {
-    this.assertAdminCityId(currentUser);
+  async create(dto: CreateEventDto, currentUser: CurrentUser): Promise<EventResponse> {
+    const cityId = this.resolveCityId(currentUser, dto.cityId);
 
-    await this.validateLocalBelongsToCity(dto.localId, currentUser.cityId);
+    await this.validateLocalBelongsToCity(dto.localId, cityId);
 
     const event = await this.prisma.client.event.create({
       data: {
@@ -106,36 +98,29 @@ export class EventsService {
         type: dto.type,
         status: dto.status,
         eventDate: new Date(dto.eventDate),
-        cityId: currentUser.cityId,
+        cityId,
         userId: currentUser.sub,
         localId: dto.localId,
       },
     });
 
     await this.setCoordinates(event.id, dto.coordinates);
-
     return this.findOne(event.id);
   }
 
-  async update(
-    id: number,
-    dto: UpdateEventDto,
-    currentUser: CurrentUser,
-  ): Promise<EventResponse> {
-    this.assertAdminCityId(currentUser);
-
+  async update(id: number, dto: UpdateEventDto, currentUser: CurrentUser): Promise<EventResponse> {
     const event = await this.findEventForMutation(id);
 
-    this.assertEventBelongsToAdminCity(event.cityId, currentUser.cityId);
-
-    await this.validateLocalBelongsToCity(dto.localId, currentUser.cityId);
+    if (currentUser.cityId !== null && currentUser.cityId !== undefined) {
+      this.assertEventBelongsToAdminCity(event.cityId, currentUser.cityId);
+      await this.validateLocalBelongsToCity(dto.localId, currentUser.cityId);
+    }
 
     const data: Prisma.EventUncheckedUpdateInput = {};
 
     if (dto.title !== undefined) {
       data.title = dto.title;
     }
-
     if (dto.description !== undefined) {
       data.description = dto.description;
     }
@@ -150,17 +135,14 @@ export class EventsService {
 
     if (dto.eventDate !== undefined) {
       data.eventDate = new Date(dto.eventDate);
-    }
+    } 
 
     if (dto.localId !== undefined) {
       data.localId = dto.localId;
     }
 
     if (Object.keys(data).length > 0) {
-      await this.prisma.client.event.update({
-        where: { id },
-        data,
-      });
+      await this.prisma.client.event.update({ where: { id }, data });
     }
 
     if (dto.coordinates !== undefined) {
@@ -171,87 +153,63 @@ export class EventsService {
   }
 
   async remove(id: number, currentUser: CurrentUser) {
-    this.assertAdminCityId(currentUser);
-
     const event = await this.findEventForMutation(id);
 
-    this.assertEventBelongsToAdminCity(event.cityId, currentUser.cityId);
+    if (currentUser.cityId !== null && currentUser.cityId !== undefined) {
+      this.assertEventBelongsToAdminCity(event.cityId, currentUser.cityId);
+    }
 
     try {
       return await this.prisma.client.event.delete({
-        where: { id },
-      });
+         where: { id } });
     } catch (error: unknown) {
       this.handleDeleteError(error);
     }
   }
 
+  private resolveCityId(currentUser: CurrentUser, dtoCityId: number | undefined): number {
+    if (currentUser.cityId !== null && currentUser.cityId !== undefined) {
+      return currentUser.cityId;
+    }
+    if (dtoCityId !== undefined) {
+      return dtoCityId;
+    }
+    throw new ForbiddenException(
+      'Super admin deve informar cityId no body para criar eventos',
+    );
+  }
+
   private async findEventForMutation(id: number) {
-    const event = await this.prisma.client.event.findUnique({
+    const event = await this.prisma.client.event.findUnique({ 
       where: { id },
     });
-
-    if (!event) {
-      throw new NotFoundException('Evento não encontrado');
-    }
-
+    if (!event) throw new NotFoundException('Evento não encontrado');
     return event;
   }
 
-  private assertAdminCityId(
-    currentUser: CurrentUser,
-  ): asserts currentUser is { sub: number; cityId: number } {
-    if (currentUser.cityId === null || currentUser.cityId === undefined) {
-      throw new ForbiddenException(
-        'Admin sem cidade associada ou token desatualizado, refaça login',
-      );
-    }
-  }
-
-  private assertEventBelongsToAdminCity(
-    eventCityId: number,
-    adminCityId: number,
-  ) {
+  private assertEventBelongsToAdminCity(eventCityId: number, adminCityId: number) {
     if (eventCityId !== adminCityId) {
-      throw new ForbiddenException(
-        'Não é permitido alterar eventos de outra cidade',
-      );
+      throw new ForbiddenException('Não é permitido alterar eventos de outra cidade');
     }
   }
 
-  private async validateLocalBelongsToCity(
-    localId: number | undefined,
-    cityId: number,
-  ) {
-    if (localId === undefined) {
-      return;
-    }
+  private async validateLocalBelongsToCity(localId: number | undefined, cityId: number) {
+    if (localId === undefined) return;
 
     const local = await this.prisma.client.local.findUnique({
       where: { id: localId },
-      select: {
-        cityId: true,
-      },
+      select: { cityId: true },
     });
 
-    if (!local) {
-      throw new NotFoundException('Local não encontrado');
-    }
+    if (!local) throw new NotFoundException('Local não encontrado');
 
     if (local.cityId !== cityId) {
-      throw new ForbiddenException(
-        'Não é permitido vincular evento a local de outra cidade',
-      );
+      throw new ForbiddenException('Não é permitido vincular evento a local de outra cidade');
     }
   }
 
-  private async setCoordinates(
-    eventId: number,
-    coordinates: EventCoordinatesDto | undefined,
-  ): Promise<void> {
-    if (coordinates === undefined) {
-      return;
-    }
+  private async setCoordinates(eventId: number, coordinates: EventCoordinatesDto | undefined): Promise<void> {
+    if (coordinates === undefined) return;
 
     await this.prisma.client.$executeRaw`
       UPDATE "events"
@@ -260,26 +218,14 @@ export class EventsService {
     `;
   }
 
-  private async withCoordinates(
-    events: EventWithRelations[],
-  ): Promise<EventResponse[]> {
-    const coordinatesById = await this.findCoordinatesByEventIds(
-      events.map((event) => event.id),
-    );
-
-    return events.map((event) =>
-      this.formatEvent(event, coordinatesById.get(event.id) ?? null),
-    );
+  private async withCoordinates(events: EventWithRelations[]): Promise<EventResponse[]> {
+    const coordinatesById = await this.findCoordinatesByEventIds(events.map((e) => e.id));
+    return events.map((event) => this.formatEvent(event, coordinatesById.get(event.id) ?? null));
   }
 
-  private async findCoordinatesByEventIds(
-    eventIds: number[],
-  ): Promise<Map<number, EventCoordinatesDto | null>> {
+  private async findCoordinatesByEventIds(eventIds: number[]): Promise<Map<number, EventCoordinatesDto | null>> {
     const coordinatesById = new Map<number, EventCoordinatesDto | null>();
-
-    if (eventIds.length === 0) {
-      return coordinatesById;
-    }
+    if (eventIds.length === 0) return coordinatesById;
 
     const rows = await this.prisma.client.$queryRaw<CoordinateRow[]>`
       SELECT
@@ -293,41 +239,22 @@ export class EventsService {
     for (const row of rows) {
       coordinatesById.set(
         row.id,
-        row.lat !== null && row.lng !== null
-          ? {
-              lat: Number(row.lat),
-              lng: Number(row.lng),
-            }
-          : null,
+        row.lat !== null && row.lng !== null ? { lat: Number(row.lat), lng: Number(row.lng) } : null,
       );
     }
 
     return coordinatesById;
   }
 
-  private formatEvent(
-    event: EventWithRelations,
-    coordinates: EventCoordinatesDto | null,
-  ): EventResponse {
+  private formatEvent(event: EventWithRelations, coordinates: EventCoordinatesDto | null): EventResponse {
     const { user, ...eventWithoutUser } = event;
-
-    return {
-      ...eventWithoutUser,
-      author: user,
-      coordinates,
-    };
+    return { ...eventWithoutUser, author: user, coordinates };
   }
 
   private handleDeleteError(error: unknown): never {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2003'
-    ) {
-      throw new ConflictException(
-        'Não é possível deletar o evento, pois existem dados vinculados a ele',
-      );
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      throw new ConflictException('Não é possível deletar o evento, pois existem dados vinculados a ele');
     }
-
     throw error;
   }
 }

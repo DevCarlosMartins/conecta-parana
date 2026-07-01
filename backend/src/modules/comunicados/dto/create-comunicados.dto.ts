@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateComunicadosDto {
   @ApiProperty({ example: 'Título do comunicado' })
@@ -11,6 +17,16 @@ export class CreateComunicadosDto {
   @IsString({ message: 'Descrição deve ser um texto' })
   @MinLength(10, { message: 'A descrição deve ter no mínimo 10 caracteres' })
   description!: string;
+
+  @ApiProperty({
+    example: 'comunicado',
+    enum: ['evento', 'noticia', 'comunicado'],
+  })
+  @IsString({ message: 'Categoria deve ser um texto' })
+  @IsIn(['evento', 'noticia', 'comunicado'], {
+    message: 'Categoria deve ser evento, noticia ou comunicado',
+  })
+  category!: string;
 
   @ApiProperty({
     example: true,

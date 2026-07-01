@@ -36,17 +36,19 @@ export class LocalsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Listar locais (público; filtros opcionais ?cityId & ?categoryId)',
+    summary: 'Lista locais com filtros opcionais (público)',
   })
-  @ApiResponse({ status: 200, description: 'Lista de locais' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de locais retornada com sucesso',
+  })
   findAll(@Query() query: ListLocalsQueryDto) {
     return this.localsService.findAll(query);
   }
 
   @Get(':id')
   @ApiOperation({
-    summary:
-      'Detalhar um local (público) — inclui category, city, photos[], events[]',
+    summary: 'Busca detalhes de um local (público)',
   })
   @ApiResponse({ status: 200, description: 'Local encontrado' })
   @ApiResponse({ status: 404, description: 'Local não encontrado' })
@@ -59,7 +61,7 @@ export class LocalsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Criar local (ADMIN) — cityId e userId vêm do token',
+    summary: 'Cria um local (ADMIN)',
   })
   @ApiResponse({ status: 201, description: 'Local criado' })
   @ApiResponse({
@@ -69,7 +71,7 @@ export class LocalsController {
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Role insuficiente ou admin sem cidade',
+    description: 'Acesso restrito a administradores',
   })
   create(@Body() dto: CreateLocalDto, @Request() req: ExpressRequest) {
     const user = req['user'] as JwtPayload;
@@ -81,12 +83,14 @@ export class LocalsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Editar local parcialmente (ADMIN; só locais da própria cidade)',
+    summary: 'Atualiza um local parcialmente (ADMIN)',
   })
   @ApiResponse({ status: 200, description: 'Local atualizado' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Local de outra cidade / admin sem cidade',
+    description: 'Acesso negado: local pertence a outra cidade',
   })
   @ApiResponse({ status: 404, description: 'Local não encontrado' })
   update(
@@ -104,12 +108,13 @@ export class LocalsController {
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Excluir local (ADMIN; só locais da própria cidade)',
+    summary: 'Remove um local (ADMIN)',
   })
-  @ApiResponse({ status: 200, description: 'Local excluído' })
+  @ApiResponse({ status: 200, description: 'Local removido com sucesso' })
+  @ApiResponse({ status: 401, description: 'Token não informado ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Local de outra cidade / admin sem cidade',
+    description: 'Acesso negado: local pertence a outra cidade',
   })
   @ApiResponse({ status: 404, description: 'Local não encontrado' })
   @ApiResponse({ status: 409, description: 'Local tem eventos vinculados' })

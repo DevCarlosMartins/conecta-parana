@@ -43,6 +43,7 @@ export class ComunicadosService {
       data: {
         title: dto.title,
         description: dto.description,
+        category: dto.category,
         isActive: dto.isActive ?? true,
       },
     });

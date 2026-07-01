@@ -3,12 +3,12 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 
 import { ApiService } from './api.service';
-import { environment } from '../../../environments/environment';
+
+const BASE = 'http://localhost:3000';
 
 describe('ApiService', () => {
   let service: ApiService;
   let httpMock: HttpTestingController;
- const base = environment.apiUrl;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -28,7 +28,7 @@ describe('ApiService', () => {
     const data = { title: 'Teste' };
     service.create('news', data).subscribe();
 
-    const req = httpMock.expectOne(`${base}/news`);
+    const req = httpMock.expectOne(`${BASE}/news`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(data);
     req.flush(data);
@@ -37,7 +37,7 @@ describe('ApiService', () => {
   it('getAll deve fazer GET no endpoint correto', () => {
     service.getAll('news').subscribe();
 
-    const req = httpMock.expectOne(`${base}/news`);
+    const req = httpMock.expectOne(`${BASE}/news`);
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
@@ -46,7 +46,7 @@ describe('ApiService', () => {
     const data = { title: 'Editado' };
     service.update('news', 1, data).subscribe();
 
-    const req = httpMock.expectOne(`${base}/news/1`);
+    const req = httpMock.expectOne(`${BASE}/news/1`);
     expect(req.request.method).toBe('PUT');
     req.flush(data);
   });
@@ -54,7 +54,7 @@ describe('ApiService', () => {
   it('delete deve fazer DELETE com id correto', () => {
     service.delete('news', 1).subscribe();
 
-    const req = httpMock.expectOne(`${base}/news/1`);
+    const req = httpMock.expectOne(`${BASE}/news/1`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
