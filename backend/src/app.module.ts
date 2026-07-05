@@ -18,6 +18,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { EventsModule } from './modules/events/events.module';
 import { ComunicadosModule } from './modules/comunicados/comunicados.module';
 import { UsersModule } from './modules/users/users.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { UsersModule } from './modules/users/users.module';
     EventsModule,
     ComunicadosModule,
     UsersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [
