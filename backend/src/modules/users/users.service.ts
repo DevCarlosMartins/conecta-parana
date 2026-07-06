@@ -31,10 +31,10 @@ export class UsersService {
     return this.prisma.client.user.update({
       where: { id },
       data: {
-        ...(dto.name     && { name:   dto.name }),
-        ...(dto.email    && { email:  dto.email }),
+        ...(dto.name && { name: dto.name }),
+        ...(dto.email && { email: dto.email }),
         ...(dto.password && { password: dto.password }),
-        ...(dto.cityId   && { cityId: Number(dto.cityId) }),
+        ...(dto.cityId && { cityId: Number(dto.cityId) }),
       },
       select: {
         id: true,
