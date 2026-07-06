@@ -24,6 +24,7 @@ const mockPrisma = {
     comunicado: {
       findUnique: jest.fn(),
     },
+    $transaction: jest.fn((ops) => Promise.all(ops)),
   },
 };
 
@@ -69,7 +70,7 @@ describe('NorificationsService', () => {
 
       mockPrisma.client.comunicado.findUnique.mockResolvedValue({ id: 1 });
       mockPrisma.client.user.findMany.mockResolvedValue(users);
-      mockPrisma.client.notification.createMany.mockResolvedValue({ count: 2 });
+      mockPrisma.client.notification.create.mockResolvedValue({});
 
       await service.create({
         title: 'Novo comunicado',
@@ -77,24 +78,25 @@ describe('NorificationsService', () => {
         comunicadoId: 1,
       });
 
-      expect(mockPrisma.client.notification.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            title: 'Novo comunicado',
-            description: 'Descrição válida da notificação',
-            userId: 1,
-            eventId: undefined,
-            comunicadoId: 1,
-          },
-          {
-            title: 'Novo comunicado',
-            description: 'Descrição válida da notificação',
-            userId: 2,
-            eventId: undefined,
-            comunicadoId: 1,
-          },
-        ],
+      expect(mockPrisma.client.notification.create).toHaveBeenCalledWith({
+        data: {
+          title: 'Novo comunicado',
+          description: 'Descrição válida da notificação',
+          userId: 1,
+          eventId: undefined,
+          comunicadoId: 1,
+        },
       });
+      expect(mockPrisma.client.notification.create).toHaveBeenCalledWith({
+        data: {
+          title: 'Novo comunicado',
+          description: 'Descrição válida da notificação',
+          userId: 2,
+          eventId: undefined,
+          comunicadoId: 1,
+        },
+      });
+      expect(mockPrisma.client.$transaction).toHaveBeenCalled();
     });
   });
   describe('markAsRead - permissões extras', () => {
@@ -172,7 +174,7 @@ describe('NorificationsService', () => {
 
       mockPrisma.client.event.findUnique.mockResolvedValue({ id: 1 });
       mockPrisma.client.user.findMany.mockResolvedValue(users);
-      mockPrisma.client.notification.createMany.mockResolvedValue({ count: 2 });
+      mockPrisma.client.notification.create.mockResolvedValue({});
 
       await service.create(dto);
 
@@ -181,23 +183,23 @@ describe('NorificationsService', () => {
         select: { id: true },
       });
 
-      expect(mockPrisma.client.notification.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            title: dto.title,
-            description: dto.description,
-            userId: 1,
-            eventId: dto.eventId,
-            comunicadoId: dto.comunicadoId,
-          },
-          {
-            title: dto.title,
-            description: dto.description,
-            userId: 2,
-            eventId: dto.eventId,
-            comunicadoId: dto.comunicadoId,
-          },
-        ],
+      expect(mockPrisma.client.notification.create).toHaveBeenCalledWith({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          userId: 1,
+          eventId: dto.eventId,
+          comunicadoId: dto.comunicadoId,
+        },
+      });
+      expect(mockPrisma.client.notification.create).toHaveBeenCalledWith({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          userId: 2,
+          eventId: dto.eventId,
+          comunicadoId: dto.comunicadoId,
+        },
       });
     });
   });
