@@ -1,4 +1,5 @@
 import 'package:conectaparana/features/events/data/events_mock_data.dart';
+import 'package:conectaparana/features/tickets/screens/ticket_selection_screen.dart';
 import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -124,6 +125,20 @@ class _EventsScreenState extends State<EventsScreen> {
         .trim();
   }
 
+  void _openTicketSelectionFromEvent(EventMock event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => TicketSelectionScreen(
+          eventName: event.title,
+          imagePath: event.imagePath,
+          location: event.location,
+          date: event.date,
+        ),
+      ),
+    );
+  }
+
   Widget _buildGradientTitle() {
     return ShaderMask(
       blendMode: BlendMode.srcIn,
@@ -203,6 +218,8 @@ class _EventsScreenState extends State<EventsScreen> {
         ? Colors.black.withValues(alpha: 0.35)
         : Colors.black.withValues(alpha: 0.18);
 
+    final showTicketButton = _normalizeEventTitle(event.title).contains('expo');
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 22),
@@ -277,20 +294,70 @@ class _EventsScreenState extends State<EventsScreen> {
 
           const SizedBox(height: 12),
 
-          InkWell(
-            onTap: () => _showEventDetails(event),
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text(
-                'Mais informações',
-                style: GoogleFonts.montserrat(
-                  color: _teal,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              InkWell(
+                onTap: () => _showEventDetails(event),
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _teal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: _teal.withValues(alpha: 0.55)),
+                  ),
+                  child: Text(
+                    'Mais informações',
+                    style: GoogleFonts.montserrat(
+                      color: _teal,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
-            ),
+
+              if (showTicketButton)
+                InkWell(
+                  onTap: () => _openTicketSelectionFromEvent(event),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [_blue, _green]),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.confirmation_number_outlined,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Garantir ingresso',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -332,6 +399,9 @@ class _EventsScreenState extends State<EventsScreen> {
         final dialogColor = isDark ? _darkCard : Colors.white;
         final textColor = isDark ? Colors.white : _gray;
         final descriptionColor = isDark ? Colors.white70 : _gray;
+        final showTicketButton = _normalizeEventTitle(
+          event.title,
+        ).contains('expo');
 
         return Dialog(
           backgroundColor: dialogColor,
@@ -445,6 +515,34 @@ class _EventsScreenState extends State<EventsScreen> {
                         height: 1.45,
                       ),
                     ),
+
+                    if (showTicketButton) ...[
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _openTicketSelectionFromEvent(event);
+                          },
+                          icon: const Icon(Icons.confirmation_number_outlined),
+                          label: Text(
+                            'Garantir meu ingresso',
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _teal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 22),
 
