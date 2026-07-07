@@ -8,7 +8,7 @@ on:
       - "backend/**"
       - "infra/**"
   workflow_dispatch:
-  
+
 permissions:
   contents: write
   packages: write
@@ -31,6 +31,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lowercase repo owner
+        run: echo "REPO_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build e push imagem db
         uses: docker/build-push-action@v5
