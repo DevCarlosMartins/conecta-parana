@@ -120,3 +120,4 @@ jobs:
           THROTTLE_LIMIT: 100
           JWT_SECRET: secret_de_teste_do_ci_conecta_parana
           JWT_REFRESH_SECRET: refresh_secret_de_teste_do_ci
+          ABACATEPAY_API_KEY: test_key_fake_para_e2e
