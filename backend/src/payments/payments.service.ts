@@ -39,6 +39,7 @@ export class PaymentsService {
     });
 
     return {
+      paymentId: charge.data.id,
       brCode: charge.data.brCode,
       brCodeBase64: charge.data.brCodeBase64,
       expiresAt: charge.data.expiresAt,
@@ -75,6 +76,7 @@ export class PaymentsService {
     });
 
     return {
+      paymentId: charge.data.id,
       brCode: charge.data.brCode,
       brCodeBase64: charge.data.brCodeBase64,
       expiresAt: charge.data.expiresAt,
