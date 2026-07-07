@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../config/prisma.service';
 import { AbacatePayService } from './abacate-pay/abacate-pay.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class PaymentsService {
@@ -80,6 +81,66 @@ export class PaymentsService {
       brCode: charge.data.brCode,
       brCodeBase64: charge.data.brCodeBase64,
       expiresAt: charge.data.expiresAt,
+    };
+  }
+
+  async createEventCheckout(
+    eventId: number,
+    userId: number,
+    items: {
+      type: 'PISTA' | 'CAMAROTE';
+      quantity: number;
+      unitPrice: number;
+    }[],
+  ) {
+    const event = await this.prisma.client.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Evento não encontrado');
+    }
+
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0,
+    );
+
+    const tickets = await this.prisma.client.$transaction(
+      items.flatMap((item) =>
+        Array.from({ length: item.quantity }).map(() =>
+          this.prisma.client.ticket.create({
+            data: {
+              eventId,
+              userId,
+              type: item.type,
+              price: item.unitPrice,
+              status: 'PENDING',
+              qrCode: randomUUID(),
+            },
+          }),
+        ),
+      ),
+    );
+    const charge = await this.abacatePayService.createPixCharge({
+      amount: Math.round(totalAmount * 100),
+      expiresIn: 3600,
+      description: `Compra de ingressos para o evento ${eventId}`,
+      metadata: { externalId: eventId.toString() },
+    });
+
+    const ticketIds = tickets.map((t) => t.id);
+    await this.prisma.client.ticket.updateMany({
+      where: { id: { in: ticketIds } },
+      data: { pixCharId: charge.data.id },
+    });
+
+    return {
+      paymentId: charge.data.id,
+      brCode: charge.data.brCode,
+      brCodeBase64: charge.data.brCodeBase64,
+      expiresAt: charge.data.expiresAt,
+      ticketIds,
     };
   }
 }

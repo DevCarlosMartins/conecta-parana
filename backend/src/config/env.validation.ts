@@ -13,4 +13,5 @@ export const envValidationSchema = Joi.object({
   GLITCHTIP_DSN: Joi.string().uri().allow('').default(''),
   JWT_SECRET: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
+  ABACATEPAY_API_KEY: Joi.string().required(),
 });
