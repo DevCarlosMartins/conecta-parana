@@ -1,4 +1,5 @@
 import 'package:conectaparana/features/map/data/map_mock_data.dart';
+import 'package:conectaparana/features/tickets/screens/ticket_selection_screen.dart';
 import 'package:conectaparana/shared/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -74,6 +75,24 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  void _openTicketSelectionFromMap(MapPointMock point) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => TicketSelectionScreen(
+          eventName: point.title.contains('2026')
+              ? point.title
+              : '${point.title} 2026',
+          imagePath: point.imagePath,
+          location: point.address,
+          date: point.date.contains('2026')
+              ? point.date
+              : '${point.date} de 2026',
+        ),
+      ),
+    );
   }
 
   Widget _buildGradientTitle() {
@@ -285,6 +304,8 @@ class _MapScreenState extends State<MapScreen> {
       return const SizedBox.shrink();
     }
 
+    final showTicketButton = point.title.toLowerCase().contains('expo');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -457,6 +478,50 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
+
+                    if (showTicketButton)
+                      InkWell(
+                        onTap: () => _openTicketSelectionFromMap(point),
+                        borderRadius: BorderRadius.circular(999),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [_blue, _green],
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _teal.withValues(alpha: 0.22),
+                                blurRadius: 6,
+                                offset: const Offset(1, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.confirmation_number_outlined,
+                                color: Colors.white,
+                                size: 15,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Garantir ingresso',
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ],
