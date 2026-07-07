@@ -43,10 +43,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Usuário atualizado' })
   @ApiResponse({ status: 401, description: 'Sem token' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateUserDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 

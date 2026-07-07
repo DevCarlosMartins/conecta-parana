@@ -26,6 +26,7 @@ export class CreateComunicadosDto {
   @IsIn(['evento', 'noticia', 'comunicado'], {
     message: 'Categoria deve ser evento, noticia ou comunicado',
   })
+  @IsOptional()
   category!: string;
 
   @ApiProperty({

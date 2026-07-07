@@ -16,7 +16,14 @@ import { createKeyv } from '@keyv/redis';
         );
 
         return {
-          stores: [createKeyv(redisUrl)],
+          stores: [
+            createKeyv({
+              url: redisUrl,
+              socket: {
+                family: 0, // dual-stack IPv4/IPv6 - necessário no Railway
+              },
+            }),
+          ],
           ttl: 30_000,
         };
       },

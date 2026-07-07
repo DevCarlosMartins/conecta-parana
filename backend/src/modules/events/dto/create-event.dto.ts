@@ -110,7 +110,8 @@ export class CreateEventDto {
 
   @ApiPropertyOptional({
     example: 1,
-    description: 'ID da cidade (obrigatório apenas para super admin sem cidade associada)',
+    description:
+      'ID da cidade (obrigatório apenas para super admin sem cidade associada)',
   })
   @IsOptional()
   @Transform(toNumber)
