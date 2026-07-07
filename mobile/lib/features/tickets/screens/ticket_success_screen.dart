@@ -1,4 +1,5 @@
 import 'package:conectaparana/features/tickets/data/ticket_mock_data.dart';
+import 'package:conectaparana/features/tickets/screens/my_tickets_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -21,6 +22,13 @@ class TicketSuccessScreen extends StatelessWidget {
 
   void _backToApp(BuildContext context) {
     Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
+  void _openMyTickets(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute<void>(builder: (context) => const MyTicketsScreen()),
+    );
   }
 
   Widget _buildTicketPreview(UserTicketMock ticket, bool isDark) {
@@ -104,40 +112,80 @@ class TicketSuccessScreen extends StatelessWidget {
   }
 
   Widget _buildMainButton(BuildContext context) {
-    return InkWell(
-      onTap: () => _backToApp(context),
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        width: double.infinity,
-        height: 52,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [_blue, _green]),
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => _openMyTickets(context),
           borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
-              blurRadius: 8,
-              offset: const Offset(2, 4),
+          child: Container(
+            width: double.infinity,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [_blue, _green]),
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 8,
+                  offset: const Offset(2, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.home_outlined, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Voltar para o app',
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.confirmation_number_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Ver meus ingressos',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+
+        const SizedBox(height: 12),
+
+        InkWell(
+          onTap: () => _backToApp(context),
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            width: double.infinity,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: _teal),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.home_outlined, color: _teal, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Voltar para o app',
+                  style: GoogleFonts.montserrat(
+                    color: _teal,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -209,17 +257,6 @@ class TicketSuccessScreen extends StatelessWidget {
               ...tickets.map((ticket) {
                 return _buildTicketPreview(ticket, isDark);
               }),
-              const SizedBox(height: 14),
-              Text(
-                'Área de histórico do usuário será implementada em breve.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
-                  color: isDark ? Colors.white70 : _gray,
-                  fontSize: 12,
-                  height: 1.4,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
               const SizedBox(height: 26),
               _buildMainButton(context),
             ],

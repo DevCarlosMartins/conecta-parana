@@ -1,3 +1,4 @@
+import 'package:conectaparana/features/tickets/screens/my_tickets_screen.dart';
 import 'package:conectaparana/providers/app_theme_provider.dart';
 import 'package:conectaparana/providers/auth_provider.dart';
 import 'package:conectaparana/providers/profile_provider.dart';
@@ -135,6 +136,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       const SnackBar(
         content: Text('Favoritos serão integrados em uma próxima etapa.'),
       ),
+    );
+  }
+
+  void _openMyTickets() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (context) => const MyTicketsScreen()),
     );
   }
 
@@ -420,6 +428,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: 'Favoritos',
           subtitle: 'Eventos e locais salvos',
           onTap: _showFavoritesPlaceholder,
+        ),
+        const SizedBox(height: 12),
+        _buildOptionCard(
+          isDark: isDark,
+          icon: Icons.confirmation_number_outlined,
+          title: 'Meus ingressos',
+          subtitle: 'Ingressos digitais comprados',
+          onTap: _openMyTickets,
         ),
         const SizedBox(height: 12),
         _buildOptionCard(

@@ -247,7 +247,7 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
         ),
         const SizedBox(height: 12),
         _buildButton(
-          label: 'Simular pagamento aprovado',
+          label: 'Verificar pagamento',
           icon: Icons.check_circle_outline,
           onTap: _simulatePaymentApproved,
           outlined: false,
