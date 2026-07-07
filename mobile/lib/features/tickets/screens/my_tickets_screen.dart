@@ -214,7 +214,7 @@ class MyTicketsScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: IconThemeData(color: isDark ? Colors.white : _gray),
         title: Text(
-          'Meus Ingressos',
+          'Ingressos',
           style: GoogleFonts.montserrat(
             color: isDark ? Colors.white : _gray,
             fontWeight: FontWeight.w900,

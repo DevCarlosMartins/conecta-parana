@@ -34,6 +34,10 @@ class TicketPixPaymentMock {
     required this.qrCodeValue,
     required this.status,
     required this.total,
+    this.qrCodeBase64,
+    this.expiresAt,
+    this.ticketIds = const [],
+    this.isMock = true,
   });
 
   final String id;
@@ -41,6 +45,12 @@ class TicketPixPaymentMock {
   final String qrCodeValue;
   final String status;
   final double total;
+  final String? qrCodeBase64;
+  final DateTime? expiresAt;
+  final List<String> ticketIds;
+  final bool isMock;
+
+  bool get hasQrCodeImage => qrCodeBase64 != null && qrCodeBase64!.isNotEmpty;
 }
 
 class UserTicketMock {
@@ -76,6 +86,8 @@ class TicketMemoryStore {
 
   static bool get hasTickets => _tickets.isNotEmpty;
 }
+
+const int expoingaBackendEventId = 1;
 
 const List<TicketTypeMock> expoingaTicketTypesMock = [
   TicketTypeMock(
@@ -139,6 +151,7 @@ double calculateOrderTotal(List<TicketCartItem> items) {
 List<UserTicketMock> generateUserTickets({
   required String eventName,
   required List<TicketCartItem> items,
+  List<String> ticketIds = const [],
 }) {
   final createdAt = DateTime.now();
   final orderId = 'PEDIDO-${createdAt.millisecondsSinceEpoch}';
@@ -148,7 +161,12 @@ List<UserTicketMock> generateUserTickets({
 
   for (final item in items) {
     for (var index = 0; index < item.quantity; index++) {
-      final ticketId = '$orderId-${sequence.toString().padLeft(2, '0')}';
+      final backendTicketId = ticketIds.length >= sequence
+          ? ticketIds[sequence - 1]
+          : null;
+
+      final ticketId =
+          backendTicketId ?? '$orderId-${sequence.toString().padLeft(2, '0')}';
 
       tickets.add(
         UserTicketMock(

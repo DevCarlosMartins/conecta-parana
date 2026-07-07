@@ -1,6 +1,8 @@
+import 'dart:convert';
+
 import 'package:conectaparana/features/tickets/data/ticket_mock_data.dart';
 import 'package:conectaparana/features/tickets/screens/ticket_success_screen.dart';
-import 'package:conectaparana/services/ticket_payment_mock_service.dart';
+import 'package:conectaparana/services/ticket_payment_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,10 +28,12 @@ class PixPaymentScreen extends StatefulWidget {
 }
 
 class _PixPaymentScreenState extends State<PixPaymentScreen> {
-  final TicketPaymentMockService _paymentService = TicketPaymentMockService();
-
+  final TicketPaymentService _paymentService = TicketPaymentService(
+    useBackendCheckout: true,
+  );
   TicketPixPaymentMock? _payment;
   bool _isLoading = true;
+  String? _errorMessage;
 
   static const Color _teal = Color(0xFF146E77);
   static const Color _blue = Color(0xFF264CA9);
@@ -46,20 +50,42 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
   }
 
   Future<void> _createPixPayment() async {
-    final payment = await _paymentService.createPixPayment(
-      eventName: widget.eventName,
-      items: widget.items,
-      subtotal: widget.subtotal,
-      serviceFee: widget.serviceFee,
-      total: widget.total,
-    );
-
-    if (!mounted) return;
-
     setState(() {
-      _payment = payment;
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final payment = await _paymentService.createPixPayment(
+        eventName: widget.eventName,
+        items: widget.items,
+        subtotal: widget.subtotal,
+        serviceFee: widget.serviceFee,
+        total: widget.total,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _payment = payment;
+        _isLoading = false;
+      });
+    } on TicketPaymentException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = error.message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage =
+            'Não foi possível gerar o Pix. Verifique se o backend está rodando.';
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _copyPixCode() async {
@@ -88,6 +114,7 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
     final tickets = generateUserTickets(
       eventName: widget.eventName,
       items: widget.items,
+      ticketIds: payment.ticketIds,
     );
 
     TicketMemoryStore.addTickets(tickets);
@@ -124,7 +151,7 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Preparando o pagamento demonstrativo da compra.',
+            'Preparando os dados do pagamento da compra.',
             textAlign: TextAlign.center,
             style: GoogleFonts.montserrat(
               color: isDark ? Colors.white70 : _gray,
@@ -135,6 +162,98 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildErrorState(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? _darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _teal),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
+            blurRadius: 9,
+            offset: const Offset(2, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A2A2A) : _lightBackground,
+              shape: BoxShape.circle,
+              border: Border.all(color: _teal),
+            ),
+            child: const Icon(Icons.error_outline, color: _teal, size: 36),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Não foi possível gerar o Pix',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.montserrat(
+              color: isDark ? Colors.white : _gray,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage ?? 'Tente novamente em instantes.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.montserrat(
+              color: isDark ? Colors.white70 : _gray,
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildButton(
+            label: 'Tentar novamente',
+            icon: Icons.refresh,
+            onTap: _createPixPayment,
+            outlined: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQrCode(TicketPixPaymentMock payment) {
+    final qrCodeBase64 = payment.qrCodeBase64;
+
+    if (qrCodeBase64 != null && qrCodeBase64.isNotEmpty) {
+      try {
+        final normalizedBase64 = qrCodeBase64.contains(',')
+            ? qrCodeBase64.split(',').last
+            : qrCodeBase64;
+
+        return Container(
+          width: 210,
+          height: 210,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _teal, width: 1.4),
+          ),
+          child: Image.memory(
+            base64Decode(normalizedBase64),
+            fit: BoxFit.contain,
+          ),
+        );
+      } catch (_) {
+        return _FakeQrCode(value: payment.qrCodeValue);
+      }
+    }
+
+    return _FakeQrCode(value: payment.qrCodeValue);
   }
 
   Widget _buildPixContent(bool isDark) {
@@ -195,7 +314,7 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              _FakeQrCode(value: payment.qrCodeValue),
+              _buildQrCode(payment),
               const SizedBox(height: 16),
               Text(
                 'Pix copia e cola',
@@ -227,7 +346,7 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Fluxo mockado para demonstração.',
+                'Escaneie o QR Code ou copie o código Pix para concluir o pagamento.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.montserrat(
                   color: isDark ? Colors.white70 : _gray,
@@ -317,6 +436,8 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         child: _isLoading
             ? _buildLoadingState(isDark)
+            : _errorMessage != null
+            ? _buildErrorState(isDark)
             : _buildPixContent(isDark),
       ),
     );
