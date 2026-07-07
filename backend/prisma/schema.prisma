@@ -263,14 +263,14 @@ model Ticket {
   qrCode      String        @unique @map("qr_code")
   checkedIn   Boolean       @default(false) @map("checked_in")
   checkedInAt DateTime?     @map("checked_in_at")
-  pixCharId   String?       @unique @map("pix_char_id")
+  pixCharId   String?       @map("pix_char_id")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
   @@index([eventId, status])
+  @@index([pixCharId])
   @@map("tickets")
 }
-
 model TableReservation {
   id              String        @id @default(uuid())
   local           Local         @relation(fields: [localId], references: [id])
