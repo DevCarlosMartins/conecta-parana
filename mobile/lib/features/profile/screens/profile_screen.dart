@@ -35,6 +35,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color _darkCard = Color(0xFF1E1E1E);
   static const Color _red = Color(0xFFFF4B4E);
   static const Color _darkRed = Color(0xFF8B1D1E);
+  String? _editedName;
+  String? _editedEmail;
 
   @override
   void initState() {
@@ -122,10 +124,185 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditProfilePlaceholder() {
+  Future<void> _showEditProfileDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profile = context.read<ProfileProvider>().profile;
+
+    final formKey = GlobalKey<FormState>();
+
+    final nameController = TextEditingController(
+      text: _editedName ?? profile.name,
+    );
+
+    final emailController = TextEditingController(
+      text: _editedEmail ?? profile.email,
+    );
+
+    final editedProfile = await showDialog<ProfileData>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? _darkCard : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+          title: Row(
+            children: [
+              const Icon(Icons.edit_outlined, color: _teal, size: 24),
+              const SizedBox(width: 10),
+              Text(
+                'Editar perfil',
+                style: GoogleFonts.montserrat(
+                  color: isDark ? Colors.white : _gray,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: SizedBox(
+                width: 360,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildEditableField(
+                      controller: nameController,
+                      label: 'Nome',
+                      icon: Icons.person_outline,
+                      isDark: isDark,
+                      textInputAction: TextInputAction.next,
+                      validator: (value) {
+                        final name = value?.trim() ?? '';
+
+                        if (name.isEmpty) {
+                          return 'Informe seu nome.';
+                        }
+
+                        if (name.length < 3) {
+                          return 'O nome deve ter pelo menos 3 caracteres.';
+                        }
+
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    _buildEditableField(
+                      controller: emailController,
+                      label: 'E-mail',
+                      icon: Icons.email_outlined,
+                      isDark: isDark,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.done,
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+
+                        if (email.isEmpty) {
+                          return 'Informe seu e-mail.';
+                        }
+
+                        if (!email.contains('@') || !email.contains('.')) {
+                          return 'Informe um e-mail válido.';
+                        }
+
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+
+                final newName = nameController.text.trim();
+                final newEmail = emailController.text.trim();
+
+                Navigator.pop(
+                  dialogContext,
+                  ProfileData(
+                    name: newName,
+                    email: newEmail,
+                    cityName: profile.cityName,
+                  ),
+                );
+              },
+              child: const Text('Confirmar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || editedProfile == null) return;
+
+    setState(() {
+      _editedName = editedProfile.name;
+      _editedEmail = editedProfile.email;
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edição de perfil será integrada em uma próxima etapa.'),
+      const SnackBar(content: Text('Perfil atualizado com sucesso.')),
+    );
+  }
+
+  Widget _buildEditableField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required String? Function(String?) validator,
+    TextInputType keyboardType = TextInputType.text,
+    TextInputAction textInputAction = TextInputAction.done,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      style: GoogleFonts.montserrat(
+        color: isDark ? Colors.white : _gray,
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: _teal, size: 20),
+        filled: true,
+        fillColor: isDark ? const Color(0xFF2A2A2A) : _lightInput,
+        labelStyle: GoogleFonts.montserrat(
+          color: isDark ? Colors.white70 : _gray,
+          fontWeight: FontWeight.w700,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _teal, width: 1.4),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _green, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _red, width: 1.4),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _red, width: 1.8),
+        ),
       ),
     );
   }
@@ -177,14 +354,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted || shouldLogout != true) return;
 
     final authProvider = context.read<AuthProvider>();
-    final profileProvider = context.read<ProfileProvider>();
     final navigator = Navigator.of(context);
 
     await authProvider.logout();
 
     if (!mounted) return;
-
-    profileProvider.resetToFallback();
     navigator.pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
@@ -199,9 +373,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Consumer<ProfileProvider>(
           builder: (context, profileProvider, _) {
             final profile = profileProvider.profile;
+            final displayProfile = ProfileData(
+              name: _editedName ?? profile.name,
+              email: _editedEmail ?? profile.email,
+              cityName: profile.cityName,
+            );
+
             final displayCityName = widget.cityName.trim().isNotEmpty
                 ? widget.cityName
-                : profile.cityName;
+                : displayProfile.cityName;
             return LayoutBuilder(
               builder: (context, constraints) {
                 return RefreshIndicator(
@@ -240,7 +420,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 24),
                             _buildAvatar(isDark),
                             const SizedBox(height: 22),
-                            _buildInfoFields(profile, displayCityName, isDark),
+                            _buildInfoFields(
+                              displayProfile,
+                              displayCityName,
+                              isDark,
+                            ),
                             const SizedBox(height: 26),
                             _buildOptions(isDark),
                             const SizedBox(height: 28),
@@ -503,7 +687,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildEditButton() {
     return InkWell(
-      onTap: _showEditProfilePlaceholder,
+      onTap: _showEditProfileDialog,
       borderRadius: BorderRadius.circular(999),
       child: Container(
         width: 190,
