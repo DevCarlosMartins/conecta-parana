@@ -8,7 +8,7 @@ on:
       - "backend/**"
       - "infra/**"
   workflow_dispatch:
-  
+
 permissions:
   contents: write
   packages: write
@@ -32,6 +32,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase repo owner
+        run: echo "REPO_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build e push imagem db
         uses: docker/build-push-action@v5
         with:
@@ -40,8 +43,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/conecta-parana-db:latest
-            ghcr.io/${{ github.repository_owner }}/conecta-parana-db:${{ github.sha }}
+            ghcr.io/${{ env.REPO_OWNER }}/conecta-parana-db:latest
+            ghcr.io/${{ env.REPO_OWNER }}/conecta-parana-db:${{ github.sha }}
 
       - name: Deploy DB na VM via SSH
         uses: appleboy/ssh-action@v1
@@ -74,6 +77,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase repo owner
+        run: echo "REPO_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build e push imagem backend
         uses: docker/build-push-action@v5
         with:
@@ -82,8 +88,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/conecta-parana-backend:latest
-            ghcr.io/${{ github.repository_owner }}/conecta-parana-backend:${{ github.sha }}
+            ghcr.io/${{ env.REPO_OWNER }}/conecta-parana-backend:latest
+            ghcr.io/${{ env.REPO_OWNER }}/conecta-parana-backend:${{ github.sha }}
 
       - name: Deploy na VM via SSH
         uses: appleboy/ssh-action@v1
