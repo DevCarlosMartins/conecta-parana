@@ -52,12 +52,12 @@ export class LocalsService {
 
     const local = await this.prisma.client.local.create({
       data: {
-        name:        dto.name,
+        name: dto.name,
         description: dto.description,
-        address:     dto.address,
-        phone:       dto.phone,
-        cityId:      resolvedCityId,
-        categoryId:  dto.categoryId,
+        address: dto.address,
+        phone: dto.phone,
+        cityId: resolvedCityId,
+        categoryId: dto.categoryId,
         userId,
       },
     });
@@ -73,10 +73,11 @@ export class LocalsService {
     const local = await this.prisma.client.local.findUnique({ where: { id } });
     if (!local) throw new NotFoundException(`Local ${id} não encontrado`);
 
-    
     if (cityId !== null && cityId !== undefined) {
       if (local.cityId !== cityId) {
-        throw new ForbiddenException('Você só pode editar locais da sua cidade');
+        throw new ForbiddenException(
+          'Você só pode editar locais da sua cidade',
+        );
       }
     }
 
@@ -85,7 +86,10 @@ export class LocalsService {
     }
 
     const { coordinates, ...scalarFields } = dto;
-    await this.prisma.client.local.update({ where: { id }, data: scalarFields });
+    await this.prisma.client.local.update({
+      where: { id },
+      data: scalarFields,
+    });
 
     if (coordinates !== undefined) {
       await this.writeCoordinates(id, coordinates);
@@ -102,10 +106,11 @@ export class LocalsService {
 
     if (!local) throw new NotFoundException(`Local ${id} não encontrado`);
 
-
     if (cityId !== null && cityId !== undefined) {
       if (local.cityId !== cityId) {
-        throw new ForbiddenException('Você só pode excluir locais da sua cidade');
+        throw new ForbiddenException(
+          'Você só pode excluir locais da sua cidade',
+        );
       }
     }
 
@@ -119,7 +124,10 @@ export class LocalsService {
     return { id, deleted: true };
   }
 
-  private resolveCityId(tokenCityId: number | null, dtoCityId: number | undefined): number {
+  private resolveCityId(
+    tokenCityId: number | null,
+    dtoCityId: number | undefined,
+  ): number {
     if (tokenCityId !== null && tokenCityId !== undefined) return tokenCityId;
     if (dtoCityId !== undefined) return dtoCityId;
     throw new ForbiddenException(

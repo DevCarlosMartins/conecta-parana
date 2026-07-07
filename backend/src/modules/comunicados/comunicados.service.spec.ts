@@ -88,6 +88,7 @@ describe('ComunicadoService', () => {
         data: {
           title: dto.title,
           description: dto.description,
+          category: '',
           isActive: false,
         },
       });
@@ -105,6 +106,7 @@ describe('ComunicadoService', () => {
         data: {
           title: dto.title,
           description: dto.description,
+          category: '',
           isActive: true,
         },
       });

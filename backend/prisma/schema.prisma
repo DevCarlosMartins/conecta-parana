@@ -10,45 +10,60 @@ datasource db {
 }
 
 model HealthCheck {
-  id        Int      @id @default(autoincrement())
+  id        Int                                   @id @default(autoincrement())
   status    String
-  checkedAt DateTime @default(now()) @map("checked_at")
+  checkedAt DateTime                              @default(now()) @map("checked_at")
   location  Unsupported("geometry(Point, 4326)")?
 
   @@map("health_checks")
 }
 
 model City {
-  id Int @id @default(autoincrement())
-  name String
+  id    Int    @id @default(autoincrement())
+  name  String
   state String
 
-  users User[]
+  users  User[]
   events Event[]
   news   News[]
-  locals Local[] 
+  locals Local[]
 
   @@unique([name, state])
   @@map("cities")
 }
 
-model User {
-  id Int @id @default(autoincrement())
-  name String 
-  email String @unique 
-  password String
-  role Role @default(USUARIO)
-  cityId Int? @map("city_id") 
+enum TicketType {
+  PISTA
+  CAMAROTE
+}
 
-  city City? @relation(fields: [cityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(USUARIO)
+  cityId   Int?   @map("city_id")
+
+  city           City?              @relation(fields: [cityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   refresh_tokens RefreshToken[]
-  events Event[] 
-  photos Photo[]
-  likes Like[]
-  favorites Favorite[]
-  notifications Notification[]
-  suggestions    Suggestion[] 
+  events         Event[]
+  photos         Photo[]
+  likes          Like[]
+  favorites      Favorite[]
+  notifications  Notification[]
+  suggestions    Suggestion[]
   locals         Local[]
+  tickets        Ticket[]
+  reservations   TableReservation[]
 
   @@map("users")
 }
@@ -59,52 +74,53 @@ enum Role {
 }
 
 model RefreshToken {
-  id Int @id @default(autoincrement())
-  token String @unique
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
   expiresAt DateTime @map("expires_at")
-  userId Int @map("user_id")
+  userId    Int      @map("user_id")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade )
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("refresh_tokens")
 }
 
-model Event{
-  id Int @id @default(autoincrement())
-  title String
+model Event {
+  id          Int                                   @id @default(autoincrement())
+  title       String
   description String
-  type String
-  status String
+  type        String
+  status      String
   coordinates Unsupported("geometry(Point, 4326)")?
-  eventDate DateTime @map("event_date")
+  eventDate   DateTime                              @map("event_date")
 
-  cityId Int @map("city_id")
-  userId Int @map("user_id")
+  cityId  Int  @map("city_id")
+  userId  Int  @map("user_id")
   localId Int? @map("local_id")
 
-  city City @relation(fields: [cityId], references: [id], onDelete: Cascade )
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade )
+  city  City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   local Local? @relation(fields: [localId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  photos Photo[]
-  likes Like[]
-  favorites Favorite[]
+  photos        Photo[]
+  likes         Like[]
+  favorites     Favorite[]
   notifications Notification[]
+  tickets       Ticket[]
 
   @@index([coordinates], type: Gist)
-
   @@map("events")
 }
 
 model Photo {
-  id Int @id @default(autoincrement())
+  id  Int    @id @default(autoincrement())
   url String @unique
 
   eventId Int? @map("event_id")
-  userId Int @map("user_id")
+  userId  Int  @map("user_id")
   localId Int? @map("local_id")
 
   event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   local Local? @relation(fields: [localId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@map("photos")
@@ -113,48 +129,48 @@ model Photo {
 model Like {
   id Int @id @default(autoincrement())
 
-  userId Int @map("user_id")
-  eventId Int? @map("event_id")
+  userId       Int  @map("user_id")
+  eventId      Int? @map("event_id")
   comunicadoId Int? @map("comunicado_id")
-  newsId Int? @map("news_id")
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  newsId       Int? @map("news_id")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event?      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   comunicado Comunicado? @relation(fields: [comunicadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  news News? @relation(fields: [newsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  news       News?       @relation(fields: [newsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@map("likes")
 }
 
 model Favorite {
-  id Int @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @map("created_at")
 
-  userId Int @map("user_id")
-  eventId Int? @map("event_id")
+  userId       Int  @map("user_id")
+  eventId      Int? @map("event_id")
   comunicadoId Int? @map("comunicado_id")
-  newsId Int? @map("news_id")
+  newsId       Int? @map("news_id")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event?      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   comunicado Comunicado? @relation(fields: [comunicadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  news News? @relation(fields: [newsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  
+  news       News?       @relation(fields: [newsId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
   @@map("favorites")
 }
 
 model Notification {
-  id Int @id @default(autoincrement())
-  title String
+  id          Int     @id @default(autoincrement())
+  title       String
   description String
-  isRead Boolean @default(false) @map("is_read")
+  isRead      Boolean @default(false) @map("is_read")
 
-  userId Int @map("user_id")
-  eventId Int? @map("event_id")
+  userId       Int  @map("user_id")
+  eventId      Int? @map("event_id")
   comunicadoId Int? @map("comunicado_id")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event? @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event?      @relation(fields: [eventId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   comunicado Comunicado? @relation(fields: [comunicadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@map("notifications")
@@ -180,7 +196,7 @@ model Comunicado {
   id          Int     @id @default(autoincrement())
   title       String
   description String
-  category    String @default("comunicado")
+  category    String  @default("comunicado")
   isActive    Boolean @map("is_active")
 
   favorites     Favorite[]
@@ -201,25 +217,25 @@ model Category {
 }
 
 model Local {
-  id          Int    @id @default(autoincrement())
+  id          Int                                   @id @default(autoincrement())
   name        String
   description String
   address     String
   phone       String
   coordinates Unsupported("geometry(Point, 4326)")?
-  cityId      Int    @map("city_id")
-  categoryId  Int    @map("category_id")
-  userId      Int    @map("created_by_user_id")
+  cityId      Int                                   @map("city_id")
+  categoryId  Int                                   @map("category_id")
+  userId      Int                                   @map("created_by_user_id")
 
-  city     City     @relation(fields: [cityId],     references: [id], onDelete: Restrict, onUpdate: Cascade)
+  city     City     @relation(fields: [cityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  user     User     @relation(fields: [userId],     references: [id], onDelete: Cascade,  onUpdate: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  photos Photo[]
-  events Event[]
+  photos       Photo[]
+  events       Event[]
+  reservations TableReservation[]
 
   @@index([coordinates], type: Gist)
-
   @@map("locals")
 }
 
@@ -233,4 +249,48 @@ model Suggestion {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("suggestions")
+}
+
+model Ticket {
+  id          String        @id @default(uuid())
+  event       Event         @relation(fields: [eventId], references: [id])
+  eventId     Int           @map("event_id")
+  user        User          @relation(fields: [userId], references: [id])
+  userId      Int           @map("user_id")
+  type        TicketType
+  price       Decimal       @db.Decimal(10, 2)
+  status      PaymentStatus @default(PENDING)
+  qrCode      String        @unique @map("qr_code")
+  checkedIn   Boolean       @default(false) @map("checked_in")
+  checkedInAt DateTime?     @map("checked_in_at")
+  pixCharId   String?       @unique @map("pix_char_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([eventId, status])
+  @@map("tickets")
+}
+
+model TableReservation {
+  id              String        @id @default(uuid())
+  local           Local         @relation(fields: [localId], references: [id])
+  localId         Int           @map("local_id")
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int           @map("user_id")
+  responsibleName String        @map("responsible_name")
+  numberOfPeople  Int           @map("number_of_people")
+  reservationTime DateTime      @map("reservation_time")
+  expiresAt       DateTime      @map("expires_at")
+  price           Decimal?      @db.Decimal(10, 2)
+  status          PaymentStatus @default(PENDING)
+  qrCode          String        @unique @map("qr_code")
+  checkedIn       Boolean       @default(false) @map("checked_in")
+  checkedInAt     DateTime?     @map("checked_in_at")
+  pixCharId       String?       @unique @map("pix_char_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([localId, status])
+  @@index([expiresAt])
+  @@map("table_reservations")
 }

@@ -109,7 +109,9 @@ describe('notificacao (e2e)', () => {
         description: 'Descrição minima da notificação',
       })
       .expect(201);
-    expect((res.body as { count: number }).count).toBeGreaterThanOrEqual(2);
+
+    expect(Array.isArray(res.body)).toBe(true);
+    expect((res.body as unknown[]).length).toBeGreaterThanOrEqual(2);
   });
 
   it('POST /notification - sem token retorna 401', async () => {
