@@ -15,15 +15,20 @@ import { createKeyv } from '@keyv/redis';
           'redis://localhost:6379',
         );
 
+        const keyv = createKeyv({
+          url: redisUrl,
+          socket: {
+            family: 0, // dual-stack IPv4/IPv6 - necessário no Railway
+            connectTimeout: 5000,
+          },
+        });
+
+        keyv.on('error', (err) => {
+          console.error('Redis connection error:', err);
+        });
+
         return {
-          stores: [
-            createKeyv({
-              url: redisUrl,
-              socket: {
-                family: 0, // dual-stack IPv4/IPv6 - necessário no Railway
-              },
-            }),
-          ],
+          stores: [keyv],
           ttl: 30_000,
         };
       },
