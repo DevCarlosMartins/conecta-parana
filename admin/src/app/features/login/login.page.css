@@ -1,3 +1,4 @@
+
 :host {
   display: block;
   min-height: 100vh;
@@ -86,20 +87,20 @@
   position: relative;
   z-index: 1;
   isolation: isolate;
-  width: min(1100px, calc(100% - 48px));
+  width: min(1420px, calc(100% - 80px));
   min-height: 100vh;
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(600px, 1fr) 430px;
-  gap: 36px;
+  gap: 78px;
   align-items: center;
-  padding: 24px 0 24px;
+  padding: 58px 0 46px;
 }
 
 .login-info-panel {
   position: relative;
   min-width: 0;
-  z-index: 1;
+  z-index: 0;
 }
 
 .login-form-area {
@@ -121,7 +122,7 @@
   display: flex;
   align-items: center;
   gap: 22px;
-  margin-bottom: 40px;
+  margin-bottom: 80px;
 }
 
 .brand-logo {
@@ -154,7 +155,7 @@
 .hero-copy h2 {
   margin: 0;
   color: #07533e;
-  font-size: clamp(28px, 3vw, 40px);
+  font-size: clamp(42px, 4.2vw, 58px);
   line-height: 1.12;
   font-weight: 900;
   letter-spacing: -0.055em;
@@ -169,26 +170,26 @@
 }
 
 .cathedral-wrapper {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 1400px;
-  opacity: 0.18;
+  position: absolute;
+  left: 14%;
+  top: 15%;
+  width: 1200px;
+  max-width: 66vw;
+  opacity: 0.16;
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
+  transform: translateX(-2%);
 }
 
 .cathedral-illustration {
   width: 100%;
   height: auto;
   display: block;
-  object-fit: contain; 
+  object-fit: contain;
 }
 
 .feature-grid {
-  margin-top: 32px;
+  margin-top: 62px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
@@ -196,8 +197,8 @@
 }
 
 .feature-card {
-  min-height: 160px;
-  padding: 22px 20px;
+  min-height: 230px;
+  padding: 34px 30px;
   border: 1px solid rgba(255, 255, 255, 0.58);
   border-radius: 22px;
   background:
@@ -216,9 +217,9 @@
 .feature-icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 14px;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 25px;
   border-radius: 999px;
   background: rgba(223, 245, 234, 0.66);
   color: #08744f;
@@ -246,9 +247,9 @@
 }
 
 .feature-card h3 {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
   color: #152033;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 850;
   line-height: 1.3;
 }
@@ -256,9 +257,8 @@
 .feature-card p {
   margin: 0;
   color: #5c6c7e;
-  font-size: 14px;
-  line-height: 1.55;
-  text-decoration: none;
+  font-size: 15.5px;
+  line-height: 1.65;
 }
 
 .login-card {
@@ -282,9 +282,9 @@
 .login-card-icon {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  margin: 28px auto 14px;
+  width: 72px;
+  height: 72px;
+  margin: 50px auto 22px;
   border-radius: 999px;
   background: rgba(221, 244, 231, 0.68);
   color: #08744f;
@@ -673,8 +673,8 @@
 
   .login-card-heading,
   .login-form {
-    padding-left: 32px;
-    padding-right: 32px;
+    padding-left: 26px;
+    padding-right: 26px;
   }
 
   .login-card-icon {
@@ -693,8 +693,4 @@
   .secure-footer {
     align-items: flex-start;
   }
-}
-
-.feature-card * {
-  text-decoration: none !important;
 }
